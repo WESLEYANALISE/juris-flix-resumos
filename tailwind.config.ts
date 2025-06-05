@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -19,6 +20,14 @@ export default {
 		},
 		extend: {
 			colors: {
+				netflix: {
+					black: '#141414',
+					darkGray: '#181818',
+					gray: '#333333',
+					lightGray: '#e5e5e5',
+					red: '#e50914',
+					darkRed: '#b8090d'
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
