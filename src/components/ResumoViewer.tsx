@@ -4,7 +4,6 @@ import { ArrowLeft, Download, ExternalLink, Loader2, Share } from 'lucide-react'
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
 import jsPDF from 'jspdf';
-import { saveAs } from 'file-saver';
 
 interface ResumoViewerProps {
   area: string;
@@ -90,21 +89,11 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
           setDownloadStatus('Compartilhado com sucesso!');
           return;
         } catch (shareError) {
-          console.log('Share API failed, trying FileSaver...', shareError);
+          console.log('Share API failed, trying data URL...', shareError);
         }
       }
 
-      // Method 2: Try FileSaver.js (best for mobile)
-      try {
-        const pdfBlob = pdf.output('blob');
-        saveAs(pdfBlob, fileName);
-        setDownloadStatus('Download iniciado via FileSaver!');
-        return;
-      } catch (fileSaverError) {
-        console.log('FileSaver failed, trying data URL...', fileSaverError);
-      }
-
-      // Method 3: Data URL approach (more stable in iframe)
+      // Method 2: Data URL approach (more stable in iframe and mobile)
       try {
         const pdfDataUri = pdf.output('dataurlstring');
         const link = document.createElement('a');
@@ -129,7 +118,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         console.log('Data URL failed, trying postMessage...', dataUrlError);
       }
 
-      // Method 4: PostMessage for iframe communication
+      // Method 3: PostMessage for iframe communication
       try {
         if (window !== window.parent) {
           const pdfBase64 = pdf.output('datauristring');
@@ -151,7 +140,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         console.log('PostMessage failed, trying final fallback...', postMessageError);
       }
 
-      // Method 5: Final fallback - new window
+      // Method 4: Final fallback - new window
       try {
         const pdfBlob = pdf.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
