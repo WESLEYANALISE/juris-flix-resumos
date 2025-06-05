@@ -1,26 +1,31 @@
 
-import { LegalArea } from '../types/legal';
+import React from 'react';
+import { ChevronRight } from 'lucide-react';
 
 interface AreaCardProps {
-  area: LegalArea;
+  area: string;
+  temasCount: number;
   onClick: () => void;
 }
 
-const AreaCard = ({ area, onClick }: AreaCardProps) => {
+const AreaCard: React.FC<AreaCardProps> = ({ area, temasCount, onClick }) => {
   return (
-    <div
+    <button
       onClick={onClick}
-      className="bg-netflix-darkGray border border-netflix-gray rounded-lg p-6 cursor-pointer hover:bg-netflix-gray transition-all duration-300 hover:border-netflix-red group"
+      className="w-full p-6 bg-netflix-darkGray border border-netflix-gray rounded-xl hover:border-netflix-red hover:bg-netflix-gray transition-all duration-300 text-left group"
     >
-      <div className="text-4xl mb-4">{area.icon}</div>
-      <h3 className="text-xl font-semibold text-netflix-lightGray mb-2 group-hover:text-netflix-red transition-colors">
-        {area.title}
-      </h3>
-      <p className="text-gray-400 text-sm">{area.description}</p>
-      <div className="mt-4 text-netflix-red text-sm">
-        {area.themes.length} tema(s) disponível(veis)
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-netflix-lightGray mb-2 group-hover:text-white">
+            {area}
+          </h3>
+          <p className="text-gray-400 text-sm">
+            {temasCount} tema{temasCount !== 1 ? 's' : ''} disponível{temasCount !== 1 ? 'is' : ''}
+          </p>
+        </div>
+        <ChevronRight className="h-6 w-6 text-gray-400 group-hover:text-netflix-red transition-colors" />
       </div>
-    </div>
+    </button>
   );
 };
 

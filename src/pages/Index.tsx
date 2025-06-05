@@ -1,143 +1,144 @@
 
-import { useState, useEffect } from 'react';
-import { legalAreas } from '../data/legalData';
-import { LegalArea, LegalTheme, LegalSubject } from '../types/legal';
-import SearchBar from '../components/SearchBar';
+import { useState } from 'react';
+import { Search } from 'lucide-react';
+import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
-import ThemesList from '../components/ThemesList';
-import SubjectsList from '../components/SubjectsList';
-import ArticleView from '../components/ArticleView';
-import Navigation from '../components/Navigation';
-import FavoritesList from '../components/FavoritesList';
-import RecentsList from '../components/RecentsList';
+import TemaCard from '../components/TemaCard';
+import AssuntoCard from '../components/AssuntoCard';
+import ResumoViewer from '../components/ResumoViewer';
+import { Input } from '@/components/ui/input';
 
 type ViewState = 
   | { type: 'areas' }
-  | { type: 'themes'; area: LegalArea }
-  | { type: 'subjects'; theme: LegalTheme }
-  | { type: 'article'; subject: LegalSubject };
+  | { type: 'temas'; area: string }
+  | { type: 'assuntos'; area: string; tema: string }
+  | { type: 'resumo'; area: string; tema: string; assunto: string; resumo: string };
 
 const Index = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'home' | 'favorites' | 'recent'>('home');
   const [viewState, setViewState] = useState<ViewState>({ type: 'areas' });
-  const [areas, setAreas] = useState(legalAreas);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { loading, error, getAreas, getTemasByArea, getAssuntosByTema } = useResumos();
 
-  // Get all subjects for favorites and recents
-  const getAllSubjects = (): LegalSubject[] => {
-    return areas.flatMap(area => 
-      area.themes.flatMap(theme => theme.subjects)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-netflix-red mx-auto mb-4"></div>
+          <p className="text-netflix-lightGray">Carregando resumos...</p>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const favorites = getAllSubjects().filter(subject => subject.isFavorite);
-  const recents = getAllSubjects()
-    .filter(subject => subject.lastViewed)
-    .sort((a, b) => (b.lastViewed?.getTime() || 0) - (a.lastViewed?.getTime() || 0))
-    .slice(0, 10);
-
-  const handleToggleFavorite = (subjectId: string) => {
-    setAreas(prevAreas => 
-      prevAreas.map(area => ({
-        ...area,
-        themes: area.themes.map(theme => ({
-          ...theme,
-          subjects: theme.subjects.map(subject => 
-            subject.id === subjectId 
-              ? { ...subject, isFavorite: !subject.isFavorite }
-              : subject
-          )
-        }))
-      }))
+  if (error) {
+    return (
+      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-netflix-red mb-4">Erro ao carregar dados</p>
+          <p className="text-gray-400">{error}</p>
+        </div>
+      </div>
     );
-  };
-
-  const handleSubjectView = (subject: LegalSubject) => {
-    // Update last viewed
-    setAreas(prevAreas => 
-      prevAreas.map(area => ({
-        ...area,
-        themes: area.themes.map(theme => ({
-          ...theme,
-          subjects: theme.subjects.map(s => 
-            s.id === subject.id 
-              ? { ...s, lastViewed: new Date() }
-              : s
-          )
-        }))
-      }))
-    );
-    
-    setViewState({ type: 'article', subject });
-  };
-
-  const filteredAreas = areas.filter(area => 
-    area.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    area.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    area.themes.some(theme => 
-      theme.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      theme.subjects.some(subject => 
-        subject.title.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    )
-  );
+  }
 
   const renderContent = () => {
-    if (activeTab === 'favorites') {
-      return <FavoritesList favorites={favorites} onSubjectClick={handleSubjectView} />;
-    }
-    
-    if (activeTab === 'recent') {
-      return <RecentsList recents={recents} onSubjectClick={handleSubjectView} />;
-    }
-
-    // Home tab
     switch (viewState.type) {
       case 'areas':
+        const areas = getAreas().filter(({ area }) =>
+          area.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAreas.map((area) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {areas.map(({ area, temasCount }) => (
               <AreaCard
-                key={area.id}
+                key={area}
                 area={area}
-                onClick={() => setViewState({ type: 'themes', area })}
+                temasCount={temasCount}
+                onClick={() => setViewState({ type: 'temas', area })}
               />
             ))}
           </div>
         );
 
-      case 'themes':
+      case 'temas':
+        const temas = getTemasByArea(viewState.area).filter(({ tema }) =>
+          tema.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
         return (
-          <ThemesList
-            themes={viewState.area.themes}
-            onThemeClick={(theme) => setViewState({ type: 'subjects', theme })}
-            onBack={() => setViewState({ type: 'areas' })}
-            areaTitle={viewState.area.title}
-          />
+          <div>
+            <button
+              onClick={() => setViewState({ type: 'areas' })}
+              className="text-netflix-red hover:text-netflix-darkRed mb-6 transition-colors"
+            >
+              ← Voltar para áreas
+            </button>
+            <h2 className="text-2xl font-bold text-netflix-lightGray mb-6">
+              {viewState.area}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {temas.map(({ tema, assuntosCount }) => (
+                <TemaCard
+                  key={tema}
+                  tema={tema}
+                  assuntosCount={assuntosCount}
+                  onClick={() => setViewState({ type: 'assuntos', area: viewState.area, tema })}
+                />
+              ))}
+            </div>
+          </div>
         );
 
-      case 'subjects':
+      case 'assuntos':
+        const assuntos = getAssuntosByTema(viewState.area, viewState.tema).filter(({ assunto }) =>
+          assunto.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
         return (
-          <SubjectsList
-            subjects={viewState.theme.subjects}
-            onSubjectClick={handleSubjectView}
-            onBack={() => setViewState({ type: 'themes', area: areas.find(a => a.themes.includes(viewState.theme))! })}
-            themeTitle={viewState.theme.title}
-          />
+          <div>
+            <button
+              onClick={() => setViewState({ type: 'temas', area: viewState.area })}
+              className="text-netflix-red hover:text-netflix-darkRed mb-6 transition-colors"
+            >
+              ← Voltar para temas
+            </button>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-netflix-lightGray">
+                {viewState.tema}
+              </h2>
+              <p className="text-gray-400">{viewState.area}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {assuntos.map(({ id, assunto, resumo }) => (
+                <AssuntoCard
+                  key={id}
+                  assunto={assunto}
+                  onClick={() => setViewState({ 
+                    type: 'resumo', 
+                    area: viewState.area, 
+                    tema: viewState.tema, 
+                    assunto, 
+                    resumo 
+                  })}
+                />
+              ))}
+            </div>
+          </div>
         );
 
-      case 'article':
+      case 'resumo':
         return (
-          <ArticleView
-            subject={viewState.subject}
-            onBack={() => {
-              const area = areas.find(a => a.themes.some(t => t.subjects.includes(viewState.subject)));
-              const theme = area?.themes.find(t => t.subjects.includes(viewState.subject));
-              if (theme) {
-                setViewState({ type: 'subjects', theme });
-              }
-            }}
-            onToggleFavorite={handleToggleFavorite}
+          <ResumoViewer
+            area={viewState.area}
+            tema={viewState.tema}
+            assunto={viewState.assunto}
+            resumo={viewState.resumo}
+            onBack={() => setViewState({ 
+              type: 'assuntos', 
+              area: viewState.area, 
+              tema: viewState.tema 
+            })}
           />
         );
 
@@ -148,26 +149,37 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-netflix-black">
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-netflix-lightGray mb-4">
-            Resumos Jurídicos
-          </h1>
-          <p className="text-xl text-gray-400">
-            Seu guia completo para o mundo do Direito
-          </p>
-        </header>
+      {viewState.type !== 'resumo' && (
+        <div className="container mx-auto px-4 py-8">
+          <header className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-netflix-lightGray mb-4">
+              Resumos Jurídicos
+            </h1>
+            <p className="text-xl text-gray-400">
+              Seu guia completo para o mundo do Direito
+            </p>
+          </header>
 
-        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+          {(viewState.type === 'areas' || viewState.type === 'temas' || viewState.type === 'assuntos') && (
+            <div className="relative w-full max-w-2xl mx-auto mb-8">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-netflix-lightGray h-5 w-5" />
+              <Input
+                type="text"
+                placeholder="Pesquisar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-12 pr-4 py-3 w-full bg-netflix-darkGray border-netflix-gray text-netflix-lightGray placeholder-gray-400 focus:border-netflix-red focus:ring-netflix-red rounded-lg text-lg"
+              />
+            </div>
+          )}
 
-        {activeTab === 'home' && viewState.type === 'areas' && (
-          <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
-        )}
+          <main>
+            {renderContent()}
+          </main>
+        </div>
+      )}
 
-        <main>
-          {renderContent()}
-        </main>
-      </div>
+      {viewState.type === 'resumo' && renderContent()}
     </div>
   );
 };
