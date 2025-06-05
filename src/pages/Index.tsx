@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useResumos } from '../hooks/useResumos';
@@ -5,6 +6,8 @@ import AreaCard from '../components/AreaCard';
 import TemaCard from '../components/TemaCard';
 import AssuntoCard from '../components/AssuntoCard';
 import ResumoViewer from '../components/ResumoViewer';
+import Navigation from '../components/Navigation';
+import FavoritesList from '../components/FavoritesList';
 import { Input } from '@/components/ui/input';
 import JuridicalLogo from '../components/JuridicalLogo';
 
@@ -14,8 +17,11 @@ type ViewState =
   | { type: 'assuntos'; area: string; tema: string }
   | { type: 'resumo'; area: string; tema: string; assunto: string; resumo: string };
 
+type ActiveTab = 'home' | 'favorites' | 'recent';
+
 const Index = () => {
   const [viewState, setViewState] = useState<ViewState>({ type: 'areas' });
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [searchTerm, setSearchTerm] = useState('');
   const { loading, error, getAreas, getTemasByArea, getAssuntosByTema } = useResumos();
 
@@ -42,6 +48,19 @@ const Index = () => {
   }
 
   const renderContent = () => {
+    if (activeTab === 'favorites') {
+      return <FavoritesList favorites={[]} onSubjectClick={() => {}} />;
+    }
+
+    if (activeTab === 'recent') {
+      return (
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-netflix-lightGray mb-4">Recentes</h2>
+          <p className="text-gray-400">Nenhum item visualizado recentemente.</p>
+        </div>
+      );
+    }
+
     switch (viewState.type) {
       case 'areas':
         const areas = getAreas().filter(({ area }) =>
@@ -49,7 +68,7 @@ const Index = () => {
         );
         
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {areas.map(({ area, temasCount }) => (
               <AreaCard
                 key={area}
@@ -67,17 +86,17 @@ const Index = () => {
         );
         
         return (
-          <div>
+          <div className="min-h-screen">
             <button
               onClick={() => setViewState({ type: 'areas' })}
               className="text-netflix-red hover:text-netflix-darkRed mb-6 transition-colors"
             >
               ← Voltar para áreas
             </button>
-            <h2 className="text-2xl font-bold text-netflix-lightGray mb-6">
+            <h2 className="text-3xl font-bold text-netflix-lightGray mb-8">
               {viewState.area}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {temas.map(({ tema, assuntosCount }) => (
                 <TemaCard
                   key={tema}
@@ -96,20 +115,20 @@ const Index = () => {
         );
         
         return (
-          <div>
+          <div className="min-h-screen">
             <button
               onClick={() => setViewState({ type: 'temas', area: viewState.area })}
               className="text-netflix-red hover:text-netflix-darkRed mb-6 transition-colors"
             >
               ← Voltar para temas
             </button>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-netflix-lightGray">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-netflix-lightGray">
                 {viewState.tema}
               </h2>
-              <p className="text-gray-400">{viewState.area}</p>
+              <p className="text-gray-400 text-lg">{viewState.area}</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {assuntos.map(({ id, assunto, resumo }) => (
                 <AssuntoCard
                   key={id}
@@ -150,12 +169,14 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-netflix-black">
       {viewState.type !== 'resumo' && (
-        <div className="container mx-auto px-4 py-8">
-          <header className="text-center mb-12">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <header className="text-center mb-8">
             <JuridicalLogo />
           </header>
 
-          {(viewState.type === 'areas' || viewState.type === 'temas' || viewState.type === 'assuntos') && (
+          <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+          {activeTab === 'home' && (viewState.type === 'areas' || viewState.type === 'temas' || viewState.type === 'assuntos') && (
             <div className="relative w-full max-w-2xl mx-auto mb-8">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-netflix-lightGray h-5 w-5" />
               <Input

@@ -1,4 +1,6 @@
 
+import { Heart, Home, Clock } from 'lucide-react';
+
 interface NavigationProps {
   activeTab: 'home' | 'favorites' | 'recent';
   onTabChange: (tab: 'home' | 'favorites' | 'recent') => void;
@@ -6,36 +8,39 @@ interface NavigationProps {
 
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   return (
-    <nav className="flex justify-center gap-8 mb-8">
+    <nav className="flex justify-center gap-2 mb-8">
       <button
         onClick={() => onTabChange('home')}
-        className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
           activeTab === 'home'
             ? 'bg-netflix-red text-white'
-            : 'text-netflix-lightGray hover:text-netflix-red'
+            : 'text-netflix-lightGray hover:text-netflix-red hover:bg-netflix-darkGray'
         }`}
       >
-        Início
+        <Home className="h-4 w-4" />
+        <span className="hidden sm:inline">Início</span>
       </button>
       <button
         onClick={() => onTabChange('favorites')}
-        className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
           activeTab === 'favorites'
             ? 'bg-netflix-red text-white'
-            : 'text-netflix-lightGray hover:text-netflix-red'
+            : 'text-netflix-lightGray hover:text-netflix-red hover:bg-netflix-darkGray'
         }`}
       >
-        Favoritos
+        <Heart className="h-4 w-4" />
+        <span className="hidden sm:inline">Favoritos</span>
       </button>
       <button
         onClick={() => onTabChange('recent')}
-        className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
           activeTab === 'recent'
             ? 'bg-netflix-red text-white'
-            : 'text-netflix-lightGray hover:text-netflix-red'
+            : 'text-netflix-lightGray hover:text-netflix-red hover:bg-netflix-darkGray'
         }`}
       >
-        Recentes
+        <Clock className="h-4 w-4" />
+        <span className="hidden sm:inline">Recentes</span>
       </button>
     </nav>
   );

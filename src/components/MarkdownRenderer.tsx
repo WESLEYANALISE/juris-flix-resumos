@@ -17,7 +17,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, fontSize }
         return (
           <h3 
             key={key} 
-            className="text-lg font-semibold text-netflix-lightGray mb-2 mt-3"
+            className="text-lg font-semibold text-netflix-lightGray mb-1 mt-2"
             style={{ fontSize: `${fontSize * 1.2}px` }}
           >
             {line.replace('### ', '')}
@@ -28,7 +28,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, fontSize }
         return (
           <h2 
             key={key} 
-            className="text-xl font-bold text-netflix-lightGray mb-3 mt-4"
+            className="text-xl font-bold text-netflix-lightGray mb-2 mt-3"
             style={{ fontSize: `${fontSize * 1.4}px` }}
           >
             {line.replace('## ', '')}
@@ -39,7 +39,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, fontSize }
         return (
           <h1 
             key={key} 
-            className="text-2xl font-bold text-netflix-lightGray mb-4 mt-5"
+            className="text-2xl font-bold text-netflix-lightGray mb-2 mt-4"
             style={{ fontSize: `${fontSize * 1.6}px` }}
           >
             {line.replace('# ', '')}
@@ -52,7 +52,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, fontSize }
         return (
           <li 
             key={key} 
-            className="text-gray-300 mb-1 ml-4 list-disc"
+            className="text-gray-300 mb-0.5 ml-4 list-disc"
             style={{ fontSize: `${fontSize}px` }}
           >
             {parseInlineMarkdown(line.replace('- ', ''))}
@@ -65,7 +65,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, fontSize }
         return (
           <li 
             key={key} 
-            className="text-gray-300 mb-1 ml-4 list-decimal"
+            className="text-gray-300 mb-0.5 ml-4 list-decimal"
             style={{ fontSize: `${fontSize}px` }}
           >
             {parseInlineMarkdown(line.replace(/^\d+\.\s/, ''))}
@@ -78,7 +78,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, fontSize }
         return (
           <blockquote 
             key={key} 
-            className="border-l-4 border-netflix-red pl-4 my-3 bg-netflix-darkGray/50 p-3 rounded-r-lg"
+            className="border-l-4 border-netflix-red pl-4 my-2 bg-netflix-darkGray/50 p-3 rounded-r-lg"
             style={{ fontSize: `${fontSize}px` }}
           >
             <p className="text-gray-300 italic">
@@ -90,14 +90,14 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, fontSize }
 
       // Empty lines
       if (line.trim() === '') {
-        return <br key={key} />;
+        return <div key={key} className="h-2" />;
       }
 
       // Regular paragraphs
       return (
         <p 
           key={key} 
-          className="text-gray-300 mb-2 leading-relaxed"
+          className="text-gray-300 mb-1 leading-relaxed"
           style={{ fontSize: `${fontSize}px` }}
         >
           {parseInlineMarkdown(line)}
