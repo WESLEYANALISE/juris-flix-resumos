@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, ExternalLink, Loader2, Share } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, Loader2 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
 import jsPDF from 'jspdf';
@@ -72,95 +72,38 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
 
       const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       
-      setDownloadStatus('Iniciando download...');
+      setDownloadStatus('Abrindo PDF...');
 
-      // Method 1: Try native Share API (mobile only)
-      if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
-        try {
-          const pdfBlob = pdf.output('blob');
-          const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-          
-          await navigator.share({
-            files: [file],
-            title: assunto,
-            text: `Resumo: ${assunto}`
-          });
-          
-          setDownloadStatus('Compartilhado com sucesso!');
-          return;
-        } catch (shareError) {
-          console.log('Share API failed, trying data URL...', shareError);
-        }
-      }
-
-      // Method 2: Data URL approach (more stable in iframe and mobile)
-      try {
-        const pdfDataUri = pdf.output('dataurlstring');
+      // Create blob and open in new tab
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Open in new tab/window
+      const newWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+      
+      if (newWindow) {
+        setDownloadStatus('PDF aberto em nova aba!');
+        
+        // Clean up the blob URL after some time
+        setTimeout(() => {
+          URL.revokeObjectURL(pdfUrl);
+        }, 10000);
+      } else {
+        // Fallback: try to download if popup is blocked
         const link = document.createElement('a');
-        link.href = pdfDataUri;
+        link.href = pdfUrl;
         link.download = fileName;
         link.target = '_blank';
-        link.rel = 'noopener noreferrer';
         
-        // Add to DOM temporarily for mobile compatibility
-        link.style.display = 'none';
         document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         
-        // Small delay for mobile compatibility
+        setDownloadStatus('Download iniciado!');
+        
         setTimeout(() => {
-          link.click();
-          document.body.removeChild(link);
-          setDownloadStatus('Download iniciado!');
-        }, 100);
-        
-        return;
-      } catch (dataUrlError) {
-        console.log('Data URL failed, trying postMessage...', dataUrlError);
-      }
-
-      // Method 3: PostMessage for iframe communication
-      try {
-        if (window !== window.parent) {
-          const pdfBase64 = pdf.output('datauristring');
-          
-          window.parent.postMessage({
-            type: 'PDF_DOWNLOAD',
-            data: {
-              base64: pdfBase64,
-              filename: fileName,
-              title: assunto,
-              mimeType: 'application/pdf'
-            }
-          }, '*');
-          
-          setDownloadStatus('PDF enviado para janela pai!');
-          return;
-        }
-      } catch (postMessageError) {
-        console.log('PostMessage failed, trying final fallback...', postMessageError);
-      }
-
-      // Method 4: Final fallback - new window
-      try {
-        const pdfBlob = pdf.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        
-        const newWindow = window.open('', '_blank', 'noopener,noreferrer');
-        if (newWindow) {
-          newWindow.location.href = pdfUrl;
-          setDownloadStatus('PDF aberto em nova janela!');
-          
-          // Clean up after some time
-          setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000);
-        } else {
-          throw new Error('Nova janela bloqueada');
-        }
-      } catch (fallbackError) {
-        console.error('Todos os métodos falharam:', fallbackError);
-        setDownloadStatus('Erro: Não foi possível baixar o PDF. Tente novamente.');
-        
-        // Show instructions for manual download
-        alert('Não foi possível baixar automaticamente.\nInstruções para mobile:\n1. Toque e segure no botão de download\n2. Selecione "Abrir em nova aba"\n3. O PDF será aberto para download manual');
+          URL.revokeObjectURL(pdfUrl);
+        }, 1000);
       }
 
     } catch (error) {
@@ -201,17 +144,8 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  {/mobile|android|iphone|ipad/i.test(navigator.userAgent) && navigator.share ? (
-                    <Share className="h-4 w-4" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4" />
-                  )}
-                  <span className="text-sm font-medium">
-                    {/mobile|android|iphone|ipad/i.test(navigator.userAgent) && navigator.share 
-                      ? 'Compartilhar PDF' 
-                      : 'Exportar PDF'
-                    }
-                  </span>
+                  <ExternalLink className="h-4 w-4" />
+                  <span className="text-sm font-medium">Abrir PDF</span>
                 </>
               )}
             </button>
