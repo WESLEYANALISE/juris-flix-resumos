@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, Loader2, Share } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
 import jsPDF from 'jspdf';
+import { saveAs } from 'file-saver';
 
 interface ResumoViewerProps {
   area: string;
@@ -23,6 +23,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const [fontSize, setFontSize] = useState(15);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<string>('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,6 +43,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const exportToPDF = async () => {
     try {
       setIsGeneratingPDF(true);
+      setDownloadStatus('Gerando PDF...');
       
       const pdf = new jsPDF();
       const margin = 20;
@@ -68,75 +70,121 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       const lines = pdf.splitTextToSize(cleanContent, maxWidth);
       pdf.text(lines, margin, 60);
 
-      // Generate PDF blob
-      const pdfBlob = pdf.output('blob');
-      const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf';
+      
+      setDownloadStatus('Iniciando download...');
 
-      // Try multiple download methods for iframe compatibility
-      const downloadMethods = [
-        // Method 1: Create download link (most compatible)
-        () => {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(pdfBlob);
-          link.download = fileName;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-        },
-
-        // Method 2: Open in new window (fallback)
-        () => {
-          const pdfUrl = URL.createObjectURL(pdfBlob);
-          const newWindow = window.open(pdfUrl, '_blank');
-          if (newWindow) {
-            newWindow.onload = () => URL.revokeObjectURL(pdfUrl);
-          } else {
-            URL.revokeObjectURL(pdfUrl);
-            throw new Error('Popup blocked');
-          }
-        },
-
-        // Method 3: Communicate with parent window if in iframe
-        () => {
-          if (window !== window.parent) {
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.parent.postMessage({
-              type: 'PDF_DOWNLOAD',
-              data: {
-                url: pdfUrl,
-                filename: fileName,
-                title: assunto
-              }
-            }, '*');
-          } else {
-            throw new Error('Not in iframe');
-          }
-        }
-      ];
-
-      // Try each method until one works
-      let success = false;
-      for (const method of downloadMethods) {
+      // Method 1: Try native Share API (mobile only)
+      if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
         try {
-          await method();
-          success = true;
-          break;
-        } catch (error) {
-          console.log('Download method failed, trying next...', error);
+          const pdfBlob = pdf.output('blob');
+          const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+          
+          await navigator.share({
+            files: [file],
+            title: assunto,
+            text: `Resumo: ${assunto}`
+          });
+          
+          setDownloadStatus('Compartilhado com sucesso!');
+          return;
+        } catch (shareError) {
+          console.log('Share API failed, trying FileSaver...', shareError);
         }
       }
 
-      if (!success) {
-        throw new Error('Todos os métodos de download falharam');
+      // Method 2: Try FileSaver.js (best for mobile)
+      try {
+        const pdfBlob = pdf.output('blob');
+        saveAs(pdfBlob, fileName);
+        setDownloadStatus('Download iniciado via FileSaver!');
+        return;
+      } catch (fileSaverError) {
+        console.log('FileSaver failed, trying data URL...', fileSaverError);
+      }
+
+      // Method 3: Data URL approach (more stable in iframe)
+      try {
+        const pdfDataUri = pdf.output('dataurlstring');
+        const link = document.createElement('a');
+        link.href = pdfDataUri;
+        link.download = fileName;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        
+        // Add to DOM temporarily for mobile compatibility
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        
+        // Small delay for mobile compatibility
+        setTimeout(() => {
+          link.click();
+          document.body.removeChild(link);
+          setDownloadStatus('Download iniciado!');
+        }, 100);
+        
+        return;
+      } catch (dataUrlError) {
+        console.log('Data URL failed, trying postMessage...', dataUrlError);
+      }
+
+      // Method 4: PostMessage for iframe communication
+      try {
+        if (window !== window.parent) {
+          const pdfBase64 = pdf.output('datauristring');
+          
+          window.parent.postMessage({
+            type: 'PDF_DOWNLOAD',
+            data: {
+              base64: pdfBase64,
+              filename: fileName,
+              title: assunto,
+              mimeType: 'application/pdf'
+            }
+          }, '*');
+          
+          setDownloadStatus('PDF enviado para janela pai!');
+          return;
+        }
+      } catch (postMessageError) {
+        console.log('PostMessage failed, trying final fallback...', postMessageError);
+      }
+
+      // Method 5: Final fallback - new window
+      try {
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        
+        const newWindow = window.open('', '_blank', 'noopener,noreferrer');
+        if (newWindow) {
+          newWindow.location.href = pdfUrl;
+          setDownloadStatus('PDF aberto em nova janela!');
+          
+          // Clean up after some time
+          setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000);
+        } else {
+          throw new Error('Nova janela bloqueada');
+        }
+      } catch (fallbackError) {
+        console.error('Todos os métodos falharam:', fallbackError);
+        setDownloadStatus('Erro: Não foi possível baixar o PDF. Tente novamente.');
+        
+        // Show instructions for manual download
+        alert(`Não foi possível baixar automaticamente. 
+               Instruções para mobile:
+               1. Toque e segure no botão de download
+               2. Selecione "Abrir em nova aba"
+               3. O PDF será aberto para download manual`);
       }
 
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
+      setDownloadStatus('Erro ao gerar PDF');
       alert('Erro ao gerar PDF. Tente novamente.');
     } finally {
       setIsGeneratingPDF(false);
+      // Clear status after 3 seconds
+      setTimeout(() => setDownloadStatus(''), 3000);
     }
   };
 
@@ -153,24 +201,41 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
             <span className="font-medium">Voltar</span>
           </button>
           
-          <button 
-            onClick={exportToPDF}
-            disabled={isGeneratingPDF}
-            className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-colors border border-netflix-gray disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isGeneratingPDF ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm font-medium">Gerando PDF...</span>
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                <ExternalLink className="h-4 w-4" />
-                <span className="text-sm font-medium">Exportar PDF</span>
-              </>
+          <div className="flex flex-col items-end gap-2">
+            <button 
+              onClick={exportToPDF}
+              disabled={isGeneratingPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-colors border border-netflix-gray disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm font-medium">Gerando PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  {/mobile|android|iphone|ipad/i.test(navigator.userAgent) && navigator.share ? (
+                    <Share className="h-4 w-4" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {/mobile|android|iphone|ipad/i.test(navigator.userAgent) && navigator.share 
+                      ? 'Compartilhar PDF' 
+                      : 'Exportar PDF'
+                    }
+                  </span>
+                </>
+              )}
+            </button>
+            
+            {downloadStatus && (
+              <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded">
+                {downloadStatus}
+              </p>
             )}
-          </button>
+          </div>
         </div>
 
         {/* Breadcrumb */}
