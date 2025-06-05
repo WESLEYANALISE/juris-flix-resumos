@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useResumos } from '../hooks/useResumos';
@@ -7,6 +6,7 @@ import TemaCard from '../components/TemaCard';
 import AssuntoCard from '../components/AssuntoCard';
 import ResumoViewer from '../components/ResumoViewer';
 import { Input } from '@/components/ui/input';
+import JuridicalLogo from '../components/JuridicalLogo';
 
 type ViewState = 
   | { type: 'areas' }
@@ -152,12 +152,7 @@ const Index = () => {
       {viewState.type !== 'resumo' && (
         <div className="container mx-auto px-4 py-8">
           <header className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-netflix-lightGray mb-4">
-              Resumos Jurídicos
-            </h1>
-            <p className="text-xl text-gray-400">
-              Seu guia completo para o mundo do Direito
-            </p>
+            <JuridicalLogo />
           </header>
 
           {(viewState.type === 'areas' || viewState.type === 'temas' || viewState.type === 'assuntos') && (
