@@ -45,7 +45,7 @@ const Index = () => {
     switch (viewState.type) {
       case 'areas':
         const areas = getAreas().filter(({ area }) =>
-          area.toLowerCase().includes(searchTerm.toLowerCase())
+          area && area.toLowerCase().includes(searchTerm.toLowerCase())
         );
         
         return (
@@ -63,7 +63,7 @@ const Index = () => {
 
       case 'temas':
         const temas = getTemasByArea(viewState.area).filter(({ tema }) =>
-          tema.toLowerCase().includes(searchTerm.toLowerCase())
+          tema && tema.toLowerCase().includes(searchTerm.toLowerCase())
         );
         
         return (
@@ -92,7 +92,7 @@ const Index = () => {
 
       case 'assuntos':
         const assuntos = getAssuntosByTema(viewState.area, viewState.tema).filter(({ assunto }) =>
-          assunto.toLowerCase().includes(searchTerm.toLowerCase())
+          assunto && assunto.toLowerCase().includes(searchTerm.toLowerCase())
         );
         
         return (
