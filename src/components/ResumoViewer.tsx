@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, ExternalLink, Loader2, Share } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -70,7 +71,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       const lines = pdf.splitTextToSize(cleanContent, maxWidth);
       pdf.text(lines, margin, 60);
 
-      const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf';
+      const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       
       setDownloadStatus('Iniciando download...');
 
@@ -170,11 +171,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         setDownloadStatus('Erro: Não foi possível baixar o PDF. Tente novamente.');
         
         // Show instructions for manual download
-        alert(`Não foi possível baixar automaticamente. 
-               Instruções para mobile:
-               1. Toque e segure no botão de download
-               2. Selecione "Abrir em nova aba"
-               3. O PDF será aberto para download manual`);
+        alert('Não foi possível baixar automaticamente.\nInstruções para mobile:\n1. Toque e segure no botão de download\n2. Selecione "Abrir em nova aba"\n3. O PDF será aberto para download manual');
       }
 
     } catch (error) {
