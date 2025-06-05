@@ -72,24 +72,26 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
 
       const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       
-      setDownloadStatus('Abrindo PDF...');
+      setDownloadStatus('Abrindo PDF no navegador...');
 
-      // Create blob and open in new tab
+      // Criar blob do PDF
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // Open in new tab/window
+      // Abrir em nova janela/aba fora do app
       const newWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
       
       if (newWindow) {
-        setDownloadStatus('PDF aberto em nova aba!');
+        setDownloadStatus('PDF aberto no navegador!');
         
-        // Clean up the blob URL after some time
+        // Limpar a URL após um tempo
         setTimeout(() => {
           URL.revokeObjectURL(pdfUrl);
-        }, 10000);
+        }, 30000);
       } else {
-        // Fallback: try to download if popup is blocked
+        // Fallback: criar link de download se popup for bloqueado
+        setDownloadStatus('Popup bloqueado, iniciando download...');
+        
         const link = document.createElement('a');
         link.href = pdfUrl;
         link.download = fileName;
@@ -99,11 +101,11 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         link.click();
         document.body.removeChild(link);
         
-        setDownloadStatus('Download iniciado!');
-        
         setTimeout(() => {
           URL.revokeObjectURL(pdfUrl);
         }, 1000);
+        
+        setDownloadStatus('Download iniciado!');
       }
 
     } catch (error) {
@@ -145,7 +147,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
                 <>
                   <Download className="h-4 w-4" />
                   <ExternalLink className="h-4 w-4" />
-                  <span className="text-sm font-medium">Abrir PDF</span>
+                  <span className="text-sm font-medium">Baixar PDF</span>
                 </>
               )}
             </button>
