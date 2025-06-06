@@ -98,7 +98,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     }
   };
   return <div className="min-h-screen bg-netflix-black">
-      <div className="container mx-auto py-6 max-w-5xl px-[12px]">
+      <div className="container mx-auto py-6 max-w-5xl px-[8px]">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button onClick={onBack} className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-colors">
