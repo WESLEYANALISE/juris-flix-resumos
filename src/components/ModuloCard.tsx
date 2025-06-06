@@ -1,25 +1,18 @@
-
 import React from 'react';
 import { BookOpen, ChevronRight } from 'lucide-react';
-
 interface ModuloCardProps {
   numero: string;
   nome: string;
   temasCount: number;
   onClick: () => void;
 }
-
 const ModuloCard: React.FC<ModuloCardProps> = ({
   numero,
   nome,
   temasCount,
   onClick
 }) => {
-  return (
-    <div
-      onClick={onClick}
-      className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-6 cursor-pointer hover:bg-netflix-gray transition-all duration-300 hover:border-netflix-red group"
-    >
+  return <div onClick={onClick} className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-6 cursor-pointer hover:bg-netflix-gray transition-all duration-300 hover:border-netflix-red group py-[14px] px-[20px]">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4 flex-1">
           <div className="p-3 bg-netflix-red/20 rounded-lg group-hover:bg-netflix-red/30 transition-colors">
@@ -41,8 +34,6 @@ const ModuloCard: React.FC<ModuloCardProps> = ({
         </div>
         <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-netflix-red transition-colors" />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default ModuloCard;
