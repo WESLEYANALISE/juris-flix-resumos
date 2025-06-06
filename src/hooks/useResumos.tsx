@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -94,14 +93,14 @@ export const useResumos = () => {
     const areasMap = new Map();
     resumos.forEach(resumo => {
       if (!areasMap.has(resumo.area)) {
-        areasMap.set(resumo.area, new Set());
+        areasMap.set(resumo.area, 0);
       }
-      areasMap.get(resumo.area).add(`${resumo.numero_do_modulo}-${resumo.nome_do_modulo}`);
+      areasMap.set(resumo.area, areasMap.get(resumo.area) + 1);
     });
     
-    return Array.from(areasMap.entries()).map(([area, modulos]) => ({
+    return Array.from(areasMap.entries()).map(([area, resumosCount]) => ({
       area,
-      modulosCount: modulos.size
+      resumosCount
     }));
   };
 

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Search } from 'lucide-react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
 import ModuloCard from '../components/ModuloCard';
@@ -9,8 +8,9 @@ import ResumoViewer from '../components/ResumoViewer';
 import Navigation from '../components/Navigation';
 import FavoritesList from '../components/FavoritesList';
 import RecentsList from '../components/RecentsList';
-import { Input } from '@/components/ui/input';
+import SearchWithPreview from '../components/SearchWithPreview';
 import JuridicalLogo from '../components/JuridicalLogo';
+
 type ViewState = {
   type: 'areas';
 } | {
@@ -40,13 +40,16 @@ type ViewState = {
   glossario: string;
   assuntoId: number;
 };
+
 type ActiveTab = 'home' | 'favorites' | 'recent';
+
 const Index = () => {
   const [viewState, setViewState] = useState<ViewState>({
     type: 'areas'
   });
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [searchTerm, setSearchTerm] = useState('');
+
   const {
     loading,
     error,
@@ -57,6 +60,7 @@ const Index = () => {
     getTemasByModulo,
     getAssuntosByTema
   } = useResumos();
+
   if (loading) {
     return <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
@@ -65,6 +69,7 @@ const Index = () => {
         </div>
       </div>;
   }
+
   if (error) {
     return <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
@@ -73,6 +78,7 @@ const Index = () => {
         </div>
       </div>;
   }
+
   const handleSubjectClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
     const assuntos = getAssuntosByTema(area, modulo.split('-')[0], tema.split('-')[0]);
     const assuntoData = assuntos.find(a => a.id === assuntoId);
@@ -92,6 +98,57 @@ const Index = () => {
       setActiveTab('home');
     }
   };
+
+  const handleSearchResultClick = (result: any) => {
+    const { path } = result;
+    
+    if (path.assunto) {
+      // Navigate to specific resume
+      const assuntos = getAssuntosByTema(path.area, path.modulo.split('-')[0], path.tema.split('-')[0]);
+      const assuntoData = assuntos.find(a => a.titulo === path.assunto);
+      if (assuntoData) {
+        setViewState({
+          type: 'resumo',
+          area: path.area,
+          numeroModulo: path.modulo.split('-')[0],
+          nomeModulo: path.modulo.split('-').slice(1).join('-'),
+          numeroTema: path.tema.split('-')[0],
+          nomeTema: path.tema.split('-').slice(1).join('-'),
+          assunto: assuntoData.titulo,
+          resumo: assuntoData.texto,
+          glossario: assuntoData.glossario,
+          assuntoId: assuntoData.id
+        });
+      }
+    } else if (path.tema) {
+      // Navigate to subjects list
+      setViewState({
+        type: 'assuntos',
+        area: path.area,
+        numeroModulo: path.modulo.split('-')[0],
+        nomeModulo: path.modulo.split('-').slice(1).join('-'),
+        numeroTema: path.tema.split('-')[0],
+        nomeTema: path.tema.split('-').slice(1).join('-')
+      });
+    } else if (path.modulo) {
+      // Navigate to themes list
+      setViewState({
+        type: 'temas',
+        area: path.area,
+        numeroModulo: path.modulo.split('-')[0],
+        nomeModulo: path.modulo.split('-').slice(1).join('-')
+      });
+    } else {
+      // Navigate to modules list
+      setViewState({
+        type: 'modulos',
+        area: path.area
+      });
+    }
+    
+    setActiveTab('home');
+  };
+
   const renderContent = () => {
     if (activeTab === 'favorites') {
       return <FavoritesList favorites={favorites} onSubjectClick={handleSubjectClick} />;
@@ -99,6 +156,7 @@ const Index = () => {
     if (activeTab === 'recent') {
       return <RecentsList recents={recents} onSubjectClick={handleSubjectClick} />;
     }
+
     switch (viewState.type) {
       case 'areas':
         const areas = getAreas().filter(({
@@ -107,8 +165,8 @@ const Index = () => {
         return <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {areas.map(({
             area,
-            modulosCount
-          }) => <AreaCard key={area} area={area} temasCount={modulosCount} onClick={() => setViewState({
+            resumosCount
+          }) => <AreaCard key={area} area={area} resumosCount={resumosCount} onClick={() => setViewState({
             type: 'modulos',
             area
           })} />)}
@@ -222,18 +280,22 @@ const Index = () => {
         return null;
     }
   };
+
   return <div className="min-h-screen bg-netflix-black">
       {viewState.type !== 'resumo' && <div className="container mx-auto px-4 py-8 max-w-7xl">
-          <header className="text-center mb-8">
+          <header className="mb-8">
             <JuridicalLogo />
           </header>
 
           <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {activeTab === 'home' && (viewState.type === 'areas' || viewState.type === 'modulos' || viewState.type === 'temas' || viewState.type === 'assuntos') && <div className="relative w-full max-w-2xl mx-auto mb-8">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-netflix-lightGray h-5 w-5" />
-              <Input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-12 pr-4 py-3 w-full bg-netflix-darkGray border-netflix-gray text-netflix-lightGray placeholder-gray-400 focus:border-netflix-red focus:ring-netflix-red rounded-lg text-lg" />
-            </div>}
+          {activeTab === 'home' && (viewState.type === 'areas' || viewState.type === 'modulos' || viewState.type === 'temas' || viewState.type === 'assuntos') && 
+            <SearchWithPreview 
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onResultClick={handleSearchResultClick}
+            />
+          }
 
           <main>
             {renderContent()}
@@ -243,4 +305,5 @@ const Index = () => {
       {viewState.type === 'resumo' && renderContent()}
     </div>;
 };
+
 export default Index;
