@@ -4,19 +4,48 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ResumoData {
   id: number;
-  Area: string;
-  Tema: string;
-  Assunto: string;
-  Resumo: string;
+  area: string;
+  numero_do_modulo: string;
+  nome_do_modulo: string;
+  numero_do_tema: string;
+  nome_do_tema: string;
+  numero_do_assunto: string;
+  titulo_do_assunto: string;
+  texto: string;
+  glossario: string;
+}
+
+interface FavoriteItem {
+  id: string;
+  area: string;
+  modulo: string;
+  tema: string;
+  assunto: string;
+  assunto_id: number;
+  created_at: string;
+}
+
+interface RecentItem {
+  id: string;
+  area: string;
+  modulo: string;
+  tema: string;
+  assunto: string;
+  assunto_id: number;
+  accessed_at: string;
 }
 
 export const useResumos = () => {
   const [resumos, setResumos] = useState<ResumoData[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [recents, setRecents] = useState<RecentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchResumos();
+    fetchFavorites();
+    fetchRecents();
   }, []);
 
   const fetchResumos = async () => {
@@ -25,7 +54,10 @@ export const useResumos = () => {
       const { data, error } = await supabase
         .from('RESUMOS_pro')
         .select('*')
-        .order('Area', { ascending: true });
+        .order('area', { ascending: true })
+        .order('numero_do_modulo', { ascending: true })
+        .order('numero_do_tema', { ascending: true })
+        .order('numero_do_assunto', { ascending: true });
 
       if (error) throw error;
       setResumos(data || []);
@@ -37,54 +69,188 @@ export const useResumos = () => {
     }
   };
 
+  const fetchFavorites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFavorites(data || []);
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+    }
+  };
+
+  const fetchRecents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_recent_access')
+        .select('*')
+        .order('accessed_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setRecents(data || []);
+    } catch (err) {
+      console.error('Error fetching recents:', err);
+    }
+  };
+
+  const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    try {
+      const { error } = await supabase
+        .from('user_favorites')
+        .insert({
+          area,
+          modulo,
+          tema,
+          assunto,
+          assunto_id: assuntoId
+        });
+
+      if (error) throw error;
+      await fetchFavorites();
+    } catch (err) {
+      console.error('Error adding to favorites:', err);
+    }
+  };
+
+  const removeFromFavorites = async (assuntoId: number) => {
+    try {
+      const { error } = await supabase
+        .from('user_favorites')
+        .delete()
+        .eq('assunto_id', assuntoId);
+
+      if (error) throw error;
+      await fetchFavorites();
+    } catch (err) {
+      console.error('Error removing from favorites:', err);
+    }
+  };
+
+  const addToRecents = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    try {
+      // Remove existing entry for same assunto
+      await supabase
+        .from('user_recent_access')
+        .delete()
+        .eq('assunto_id', assuntoId);
+
+      // Add new entry
+      const { error } = await supabase
+        .from('user_recent_access')
+        .insert({
+          area,
+          modulo,
+          tema,
+          assunto,
+          assunto_id: assuntoId
+        });
+
+      if (error) throw error;
+      await fetchRecents();
+    } catch (err) {
+      console.error('Error adding to recents:', err);
+    }
+  };
+
+  const isFavorite = (assuntoId: number) => {
+    return favorites.some(fav => fav.assunto_id === assuntoId);
+  };
+
   const getAreas = () => {
     const areasMap = new Map();
     resumos.forEach(resumo => {
-      if (!areasMap.has(resumo.Area)) {
-        areasMap.set(resumo.Area, new Set());
+      if (!areasMap.has(resumo.area)) {
+        areasMap.set(resumo.area, new Set());
       }
-      areasMap.get(resumo.Area).add(resumo.Tema);
+      areasMap.get(resumo.area).add(`${resumo.numero_do_modulo}-${resumo.nome_do_modulo}`);
     });
     
-    return Array.from(areasMap.entries()).map(([area, temas]) => ({
+    return Array.from(areasMap.entries()).map(([area, modulos]) => ({
       area,
-      temasCount: temas.size
+      modulosCount: modulos.size
     }));
   };
 
-  const getTemasByArea = (area: string) => {
-    const temasMap = new Map();
+  const getModulosByArea = (area: string) => {
+    const modulosMap = new Map();
     resumos
-      .filter(resumo => resumo.Area === area)
+      .filter(resumo => resumo.area === area)
       .forEach(resumo => {
-        if (!temasMap.has(resumo.Tema)) {
-          temasMap.set(resumo.Tema, new Set());
+        const moduloKey = `${resumo.numero_do_modulo}-${resumo.nome_do_modulo}`;
+        if (!modulosMap.has(moduloKey)) {
+          modulosMap.set(moduloKey, {
+            numero: resumo.numero_do_modulo,
+            nome: resumo.nome_do_modulo,
+            temas: new Set()
+          });
         }
-        temasMap.get(resumo.Tema).add(resumo.Assunto);
+        modulosMap.get(moduloKey).temas.add(`${resumo.numero_do_tema}-${resumo.nome_do_tema}`);
       });
 
-    return Array.from(temasMap.entries()).map(([tema, assuntos]) => ({
-      tema,
-      assuntosCount: assuntos.size
+    return Array.from(modulosMap.entries()).map(([key, modulo]) => ({
+      numero: modulo.numero,
+      nome: modulo.nome,
+      temasCount: modulo.temas.size
     }));
   };
 
-  const getAssuntosByTema = (area: string, tema: string) => {
+  const getTemasByModulo = (area: string, numeroModulo: string) => {
+    const temasMap = new Map();
+    resumos
+      .filter(resumo => resumo.area === area && resumo.numero_do_modulo === numeroModulo)
+      .forEach(resumo => {
+        const temaKey = `${resumo.numero_do_tema}-${resumo.nome_do_tema}`;
+        if (!temasMap.has(temaKey)) {
+          temasMap.set(temaKey, {
+            numero: resumo.numero_do_tema,
+            nome: resumo.nome_do_tema,
+            assuntos: new Set()
+          });
+        }
+        temasMap.get(temaKey).assuntos.add(resumo.titulo_do_assunto);
+      });
+
+    return Array.from(temasMap.entries()).map(([key, tema]) => ({
+      numero: tema.numero,
+      nome: tema.nome,
+      assuntosCount: tema.assuntos.size
+    }));
+  };
+
+  const getAssuntosByTema = (area: string, numeroModulo: string, numeroTema: string) => {
     return resumos
-      .filter(resumo => resumo.Area === area && resumo.Tema === tema)
+      .filter(resumo => 
+        resumo.area === area && 
+        resumo.numero_do_modulo === numeroModulo && 
+        resumo.numero_do_tema === numeroTema
+      )
       .map(resumo => ({
         id: resumo.id,
-        assunto: resumo.Assunto,
-        resumo: resumo.Resumo
+        numero: resumo.numero_do_assunto,
+        titulo: resumo.titulo_do_assunto,
+        texto: resumo.texto,
+        glossario: resumo.glossario
       }));
   };
 
   return {
     resumos,
+    favorites,
+    recents,
     loading,
     error,
     getAreas,
-    getTemasByArea,
-    getAssuntosByTema
+    getModulosByArea,
+    getTemasByModulo,
+    getAssuntosByTema,
+    addToFavorites,
+    removeFromFavorites,
+    addToRecents,
+    isFavorite
   };
 };

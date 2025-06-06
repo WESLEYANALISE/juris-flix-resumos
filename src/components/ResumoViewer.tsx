@@ -1,26 +1,48 @@
+
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, Loader2, Heart } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
+import GlossarySection from './GlossarySection';
+import CopyButton from './CopyButton';
+import { useResumos } from '../hooks/useResumos';
 import jsPDF from 'jspdf';
+
 interface ResumoViewerProps {
   area: string;
+  modulo: string;
   tema: string;
   assunto: string;
   resumo: string;
+  glossario: string;
+  assuntoId: number;
   onBack: () => void;
 }
+
 const ResumoViewer: React.FC<ResumoViewerProps> = ({
   area,
+  modulo,
   tema,
   assunto,
   resumo,
+  glossario,
+  assuntoId,
   onBack
 }) => {
-  const [fontSize, setFontSize] = useState(15);
+  const [fontSize, setFontSize] = useState(16); // Default to 16px as requested
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<string>('');
+  
+  const { addToFavorites, removeFromFavorites, addToRecents, isFavorite } = useResumos();
+  const [favorite, setFavorite] = useState(false);
+
+  useEffect(() => {
+    setFavorite(isFavorite(assuntoId));
+    // Add to recent access when component mounts
+    addToRecents(area, modulo, tema, assunto, assuntoId);
+  }, [assuntoId, isFavorite, addToRecents, area, modulo, tema, assunto]);
+
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollButton(window.scrollY > 300);
@@ -28,12 +50,27 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   };
+
+  const handleFavoriteToggle = async () => {
+    try {
+      if (favorite) {
+        await removeFromFavorites(assuntoId);
+      } else {
+        await addToFavorites(area, modulo, tema, assunto, assuntoId);
+      }
+      setFavorite(!favorite);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
   const exportToPDF = async () => {
     try {
       setIsGeneratingPDF(true);
@@ -49,31 +86,30 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
 
       // Subtitle
       pdf.setFontSize(12);
-      pdf.text(`${area} > ${tema}`, margin, 45);
+      pdf.text(`${area} > ${modulo} > ${tema}`, margin, 45);
 
       // Content (clean markdown)
       const cleanContent = resumo.replace(/#{1,6}\s+/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/`(.*?)`/g, '$1').replace(/>\s+/g, '');
       pdf.setFontSize(10);
       const lines = pdf.splitTextToSize(cleanContent, maxWidth);
       pdf.text(lines, margin, 60);
+      
       const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       setDownloadStatus('Abrindo PDF no navegador...');
 
-      // Criar blob do PDF
+      // Create PDF blob
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
 
-      // Abrir em nova janela/aba fora do app
+      // Open in new tab outside the app
       const newWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
       if (newWindow) {
         setDownloadStatus('PDF aberto no navegador!');
-
-        // Limpar a URL após um tempo
         setTimeout(() => {
           URL.revokeObjectURL(pdfUrl);
         }, 30000);
       } else {
-        // Fallback: criar link de download se popup for bloqueado
+        // Fallback: create download link if popup is blocked
         setDownloadStatus('Popup bloqueado, iniciando download...');
         const link = document.createElement('a');
         link.href = pdfUrl;
@@ -93,34 +129,66 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       alert('Erro ao gerar PDF. Tente novamente.');
     } finally {
       setIsGeneratingPDF(false);
-      // Clear status after 3 seconds
       setTimeout(() => setDownloadStatus(''), 3000);
     }
   };
-  return <div className="min-h-screen bg-netflix-black">
+
+  return (
+    <div className="min-h-screen bg-netflix-black">
       <div className="container mx-auto py-6 max-w-5xl px-[8px]">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <button onClick={onBack} className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-colors">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-colors"
+          >
             <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Voltar</span>
           </button>
           
           <div className="flex flex-col items-end gap-2">
-            <button onClick={exportToPDF} disabled={isGeneratingPDF} className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-colors border border-netflix-gray disabled:opacity-50 disabled:cursor-not-allowed">
-              {isGeneratingPDF ? <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm font-medium">Gerando PDF...</span>
-                </> : <>
-                  <Download className="h-4 w-4" />
-                  <ExternalLink className="h-4 w-4" />
-                  <span className="text-sm font-medium">Baixar PDF</span>
-                </>}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleFavoriteToggle}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors border ${
+                  favorite
+                    ? 'bg-netflix-red text-white border-netflix-red'
+                    : 'bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray border-netflix-gray'
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+                <span className="text-sm font-medium">
+                  {favorite ? 'Favoritado' : 'Favoritar'}
+                </span>
+              </button>
+
+              <CopyButton text={resumo} assunto={assunto} />
+
+              <button
+                onClick={exportToPDF}
+                disabled={isGeneratingPDF}
+                className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-colors border border-netflix-gray disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm font-medium">Gerando PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="text-sm font-medium">Baixar PDF</span>
+                  </>
+                )}
+              </button>
+            </div>
             
-            {downloadStatus && <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded">
+            {downloadStatus && (
+              <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded">
                 {downloadStatus}
-              </p>}
+              </p>
+            )}
           </div>
         </div>
 
@@ -128,6 +196,8 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         <div className="mb-6">
           <nav className="text-sm text-gray-400">
             <span>{area}</span>
+            <span className="mx-2">›</span>
+            <span>{modulo}</span>
             <span className="mx-2">›</span>
             <span>{tema}</span>
             <span className="mx-2">›</span>
@@ -144,10 +214,20 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         <div className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-8 px-[13px]">
           <MarkdownRenderer content={resumo} fontSize={fontSize} />
         </div>
+
+        {/* Glossary Section */}
+        <GlossarySection content={glossario} />
       </div>
 
       {/* Floating Controls */}
-      <FloatingControls fontSize={fontSize} onFontSizeChange={setFontSize} onScrollToTop={scrollToTop} showScrollButton={showScrollButton} />
-    </div>;
+      <FloatingControls
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
+        onScrollToTop={scrollToTop}
+        showScrollButton={showScrollButton}
+      />
+    </div>
+  );
 };
+
 export default ResumoViewer;

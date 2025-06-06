@@ -4876,25 +4876,40 @@ export type Database = {
       }
       RESUMOS_pro: {
         Row: {
-          Area: string | null
-          Assunto: string | null
+          area: string | null
+          glossario: string | null
           id: number
-          Resumo: string | null
-          Tema: string | null
+          nome_do_modulo: string | null
+          nome_do_tema: string | null
+          numero_do_assunto: string | null
+          numero_do_modulo: string | null
+          numero_do_tema: string | null
+          texto: string | null
+          titulo_do_assunto: string | null
         }
         Insert: {
-          Area?: string | null
-          Assunto?: string | null
+          area?: string | null
+          glossario?: string | null
           id?: number
-          Resumo?: string | null
-          Tema?: string | null
+          nome_do_modulo?: string | null
+          nome_do_tema?: string | null
+          numero_do_assunto?: string | null
+          numero_do_modulo?: string | null
+          numero_do_tema?: string | null
+          texto?: string | null
+          titulo_do_assunto?: string | null
         }
         Update: {
-          Area?: string | null
-          Assunto?: string | null
+          area?: string | null
+          glossario?: string | null
           id?: number
-          Resumo?: string | null
-          Tema?: string | null
+          nome_do_modulo?: string | null
+          nome_do_tema?: string | null
+          numero_do_assunto?: string | null
+          numero_do_modulo?: string | null
+          numero_do_tema?: string | null
+          texto?: string | null
+          titulo_do_assunto?: string | null
         }
         Relationships: []
       }
@@ -6012,6 +6027,54 @@ export type Database = {
           article_id?: string
           created_at?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_flashcard_progress: {
+        Row: {
+          area: string
+          correct_answers: number | null
+          created_at: string | null
+          flashcard_id: number
+          id: string
+          last_studied: string | null
+          mastery_level: string | null
+          needs_review: boolean | null
+          streak_count: number | null
+          tema: string | null
+          total_attempts: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          area: string
+          correct_answers?: number | null
+          created_at?: string | null
+          flashcard_id: number
+          id?: string
+          last_studied?: string | null
+          mastery_level?: string | null
+          needs_review?: boolean | null
+          streak_count?: number | null
+          tema?: string | null
+          total_attempts?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          area?: string
+          correct_answers?: number | null
+          created_at?: string | null
+          flashcard_id?: number
+          id?: string
+          last_studied?: string | null
+          mastery_level?: string | null
+          needs_review?: boolean | null
+          streak_count?: number | null
+          tema?: string | null
+          total_attempts?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
