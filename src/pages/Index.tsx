@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
@@ -44,9 +45,7 @@ type ViewState = {
 type ActiveTab = 'home' | 'favorites' | 'recent';
 
 const Index = () => {
-  const [viewState, setViewState] = useState<ViewState>({
-    type: 'areas'
-  });
+  const [viewState, setViewState] = useState<ViewState>({ type: 'areas' });
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -62,21 +61,25 @@ const Index = () => {
   } = useResumos();
 
   if (loading) {
-    return <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-netflix-red mx-auto mb-4"></div>
           <p className="text-netflix-lightGray">Carregando resumos...</p>
         </div>
-      </div>;
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
           <p className="text-netflix-red mb-4">Erro ao carregar dados</p>
           <p className="text-gray-400">{error}</p>
         </div>
-      </div>;
+      </div>
+    );
   }
 
   const handleSubjectClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
@@ -103,7 +106,6 @@ const Index = () => {
     const { path } = result;
     
     if (path.assunto) {
-      // Navigate to specific resume
       const assuntos = getAssuntosByTema(path.area, path.modulo.split('-')[0], path.tema.split('-')[0]);
       const assuntoData = assuntos.find(a => a.titulo === path.assunto);
       if (assuntoData) {
@@ -121,7 +123,6 @@ const Index = () => {
         });
       }
     } else if (path.tema) {
-      // Navigate to subjects list
       setViewState({
         type: 'assuntos',
         area: path.area,
@@ -131,7 +132,6 @@ const Index = () => {
         nomeTema: path.tema.split('-').slice(1).join('-')
       });
     } else if (path.modulo) {
-      // Navigate to themes list
       setViewState({
         type: 'temas',
         area: path.area,
@@ -139,15 +139,14 @@ const Index = () => {
         nomeModulo: path.modulo.split('-').slice(1).join('-')
       });
     } else {
-      // Navigate to modules list
-      setViewState({
-        type: 'modulos',
-        area: path.area
-      });
+      setViewState({ type: 'modulos', area: path.area });
     }
     
     setActiveTab('home');
   };
+
+  const showHeader = viewState.type === 'areas' && activeTab === 'home';
+  const showNavigation = viewState.type !== 'resumo';
 
   const renderContent = () => {
     if (activeTab === 'favorites') {
@@ -159,151 +158,207 @@ const Index = () => {
 
     switch (viewState.type) {
       case 'areas':
-        const areas = getAreas().filter(({
-          area
-        }) => area && area.toLowerCase().includes(searchTerm.toLowerCase()));
-        return <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {areas.map(({
-            area,
-            resumosCount
-          }) => <AreaCard key={area} area={area} resumosCount={resumosCount} onClick={() => setViewState({
-            type: 'modulos',
-            area
-          })} />)}
-          </div>;
+        const areas = getAreas().filter(({ area }) => 
+          area && area.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        return (
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-bold text-netflix-lightGray">
+                Resumos Jurídicos Pro
+              </h1>
+              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                Acesse resumos completos e organizados por área do direito. 
+                Estude de forma eficiente com conteúdo profissional.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {areas.map(({ area, resumosCount }) => (
+                <AreaCard 
+                  key={area} 
+                  area={area} 
+                  resumosCount={resumosCount} 
+                  onClick={() => setViewState({ type: 'modulos', area })} 
+                />
+              ))}
+            </div>
+          </div>
+        );
+
       case 'modulos':
-        const modulos = getModulosByArea(viewState.area).filter(({
-          nome
-        }) => nome && nome.toLowerCase().includes(searchTerm.toLowerCase()));
-        return <div className="min-h-screen">
-            <button onClick={() => setViewState({
-            type: 'areas'
-          })} className="text-netflix-red hover:text-netflix-darkRed mb-6 transition-colors">
+        const modulos = getModulosByArea(viewState.area).filter(({ nome }) => 
+          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        return (
+          <div className="space-y-6">
+            <button 
+              onClick={() => setViewState({ type: 'areas' })}
+              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
+            >
               ← Voltar para áreas
             </button>
-            <h2 className="text-3xl font-bold text-netflix-lightGray mb-8">
-              {viewState.area}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {modulos.map(({
-              numero,
-              nome,
-              temasCount
-            }) => <ModuloCard key={`${numero}-${nome}`} numero={numero} nome={nome} temasCount={temasCount} onClick={() => setViewState({
-              type: 'temas',
-              area: viewState.area,
-              numeroModulo: numero,
-              nomeModulo: nome
-            })} />)}
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-netflix-lightGray">{viewState.area}</h2>
+              <p className="text-gray-400">Selecione um módulo para continuar</p>
             </div>
-          </div>;
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {modulos.map(({ numero, nome, temasCount }) => (
+                <ModuloCard 
+                  key={`${numero}-${nome}`} 
+                  numero={numero} 
+                  nome={nome} 
+                  temasCount={temasCount} 
+                  onClick={() => setViewState({
+                    type: 'temas',
+                    area: viewState.area,
+                    numeroModulo: numero,
+                    nomeModulo: nome
+                  })} 
+                />
+              ))}
+            </div>
+          </div>
+        );
+
       case 'temas':
-        const temas = getTemasByModulo(viewState.area, viewState.numeroModulo).filter(({
-          nome
-        }) => nome && nome.toLowerCase().includes(searchTerm.toLowerCase()));
-        return <div className="min-h-screen">
-            <button onClick={() => setViewState({
-            type: 'modulos',
-            area: viewState.area
-          })} className="text-netflix-red hover:text-netflix-darkRed mb-6 transition-colors">
+        const temas = getTemasByModulo(viewState.area, viewState.numeroModulo).filter(({ nome }) => 
+          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        return (
+          <div className="space-y-6">
+            <button 
+              onClick={() => setViewState({ type: 'modulos', area: viewState.area })}
+              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
+            >
               ← Voltar para módulos
             </button>
-            <div className="mb-8">
-              <h2 className="font-bold text-netflix-lightGray text-lg">
-                {viewState.nomeModulo}
-              </h2>
-              <p className="text-gray-400 text-lg">{viewState.area}</p>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-netflix-lightGray">{viewState.nomeModulo}</h2>
+              <p className="text-gray-400">{viewState.area}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {temas.map(({
-              numero,
-              nome,
-              assuntosCount
-            }) => <TemaCard key={`${numero}-${nome}`} tema={nome} assuntosCount={assuntosCount} onClick={() => setViewState({
+              {temas.map(({ numero, nome, assuntosCount }) => (
+                <TemaCard 
+                  key={`${numero}-${nome}`} 
+                  tema={nome} 
+                  assuntosCount={assuntosCount} 
+                  onClick={() => setViewState({
+                    type: 'assuntos',
+                    area: viewState.area,
+                    numeroModulo: viewState.numeroModulo,
+                    nomeModulo: viewState.nomeModulo,
+                    numeroTema: numero,
+                    nomeTema: nome
+                  })} 
+                />
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'assuntos':
+        const assuntos = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema)
+          .filter(({ titulo }) => titulo && titulo.toLowerCase().includes(searchTerm.toLowerCase()));
+        return (
+          <div className="space-y-6">
+            <button 
+              onClick={() => setViewState({
+                type: 'temas',
+                area: viewState.area,
+                numeroModulo: viewState.numeroModulo,
+                nomeModulo: viewState.nomeModulo
+              })}
+              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
+            >
+              ← Voltar para temas
+            </button>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-netflix-lightGray">{viewState.nomeTema}</h2>
+              <p className="text-gray-400">{viewState.area} › {viewState.nomeModulo}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {assuntos.map(({ id, titulo }) => (
+                <AssuntoCard 
+                  key={id} 
+                  assunto={titulo} 
+                  onClick={() => {
+                    const assuntoData = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema)
+                      .find(a => a.id === id);
+                    if (assuntoData) {
+                      setViewState({
+                        type: 'resumo',
+                        area: viewState.area,
+                        numeroModulo: viewState.numeroModulo,
+                        nomeModulo: viewState.nomeModulo,
+                        numeroTema: viewState.numeroTema,
+                        nomeTema: viewState.nomeTema,
+                        assunto: assuntoData.titulo,
+                        resumo: assuntoData.texto,
+                        glossario: assuntoData.glossario,
+                        assuntoId: assuntoData.id
+                      });
+                    }
+                  }} 
+                />
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'resumo':
+        return (
+          <ResumoViewer 
+            area={viewState.area} 
+            modulo={viewState.nomeModulo} 
+            tema={viewState.nomeTema} 
+            assunto={viewState.assunto} 
+            resumo={viewState.resumo} 
+            glossario={viewState.glossario} 
+            assuntoId={viewState.assuntoId} 
+            onBack={() => setViewState({
               type: 'assuntos',
               area: viewState.area,
               numeroModulo: viewState.numeroModulo,
               nomeModulo: viewState.nomeModulo,
-              numeroTema: numero,
-              nomeTema: nome
-            })} />)}
-            </div>
-          </div>;
-      case 'assuntos':
-        const assuntos = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).filter(({
-          titulo
-        }) => titulo && titulo.toLowerCase().includes(searchTerm.toLowerCase()));
-        return <div className="min-h-screen">
-            <button onClick={() => setViewState({
-            type: 'temas',
-            area: viewState.area,
-            numeroModulo: viewState.numeroModulo,
-            nomeModulo: viewState.nomeModulo
-          })} className="text-netflix-red hover:text-netflix-darkRed mb-6 transition-colors">
-              ← Voltar para temas
-            </button>
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-netflix-lightGray">
-                {viewState.nomeTema}
-              </h2>
-              <p className="text-gray-400 text-lg">{viewState.area} › {viewState.nomeModulo}</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {assuntos.map(({
-              id,
-              numero,
-              titulo
-            }) => <AssuntoCard key={id} assunto={titulo} onClick={() => setViewState({
-              type: 'resumo',
-              area: viewState.area,
-              numeroModulo: viewState.numeroModulo,
-              nomeModulo: viewState.nomeModulo,
               numeroTema: viewState.numeroTema,
-              nomeTema: viewState.nomeTema,
-              assunto: titulo,
-              resumo: getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).find(a => a.id === id)?.texto || '',
-              glossario: getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).find(a => a.id === id)?.glossario || '',
-              assuntoId: id
-            })} />)}
-            </div>
-          </div>;
-      case 'resumo':
-        return <ResumoViewer area={viewState.area} modulo={viewState.nomeModulo} tema={viewState.nomeTema} assunto={viewState.assunto} resumo={viewState.resumo} glossario={viewState.glossario} assuntoId={viewState.assuntoId} onBack={() => setViewState({
-          type: 'assuntos',
-          area: viewState.area,
-          numeroModulo: viewState.numeroModulo,
-          nomeModulo: viewState.nomeModulo,
-          numeroTema: viewState.numeroTema,
-          nomeTema: viewState.nomeTema
-        })} />;
+              nomeTema: viewState.nomeTema
+            })} 
+          />
+        );
+
       default:
         return null;
     }
   };
 
-  return <div className="min-h-screen bg-netflix-black">
-      {viewState.type !== 'resumo' && <div className="container mx-auto px-4 py-8 max-w-7xl">
-          <header className="mb-8">
-            <JuridicalLogo />
-          </header>
+  return (
+    <div className="min-h-screen bg-netflix-black">
+      {showNavigation && (
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {showHeader && (
+            <header className="mb-8">
+              <JuridicalLogo />
+            </header>
+          )}
 
           <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {activeTab === 'home' && (viewState.type === 'areas' || viewState.type === 'modulos' || viewState.type === 'temas' || viewState.type === 'assuntos') && 
+          {activeTab === 'home' && (
             <SearchWithPreview 
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               onResultClick={handleSearchResultClick}
             />
-          }
+          )}
 
-          <main>
-            {renderContent()}
-          </main>
-        </div>}
+          <main>{renderContent()}</main>
+        </div>
+      )}
 
       {viewState.type === 'resumo' && renderContent()}
-    </div>;
+    </div>
+  );
 };
 
 export default Index;

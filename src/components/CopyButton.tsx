@@ -10,10 +10,31 @@ interface CopyButtonProps {
 const CopyButton: React.FC<CopyButtonProps> = ({ text, assunto }) => {
   const [copied, setCopied] = useState(false);
 
+  const removeMarkdown = (text: string): string => {
+    return text
+      // Remove headers
+      .replace(/#{1,6}\s+/g, '')
+      // Remove bold
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      // Remove italic
+      .replace(/\*(.*?)\*/g, '$1')
+      // Remove inline code
+      .replace(/`(.*?)`/g, '$1')
+      // Remove blockquotes
+      .replace(/>\s+/g, '')
+      // Remove list markers
+      .replace(/^[-*+]\s+/gm, '')
+      // Remove numbered list markers
+      .replace(/^\d+\.\s+/gm, '')
+      // Clean up extra whitespace
+      .replace(/\n\s*\n/g, '\n\n')
+      .trim();
+  };
+
   const handleCopy = async () => {
     try {
-      // Format text for WhatsApp with line breaks
-      const formattedText = `*${assunto}*\n\n${text.replace(/\n\s*\n/g, '\n\n')}`;
+      const cleanText = removeMarkdown(text);
+      const formattedText = `${assunto}\n\n${cleanText}`;
       
       await navigator.clipboard.writeText(formattedText);
       setCopied(true);
