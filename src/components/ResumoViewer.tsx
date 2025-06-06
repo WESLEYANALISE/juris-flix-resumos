@@ -136,7 +136,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         </div>
 
         {/* Title */}
-        <h1 className="font-bold text-netflix-lightGray mb-8 text-2xl">
+        <h1 className="font-bold text-netflix-lightGray mb-8 text-xl">
           {assunto}
         </h1>
 
