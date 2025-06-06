@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, ExternalLink, Loader2 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -9,7 +8,6 @@ import CopyButton from './CopyButton';
 import AuthDialog from './AuthDialog';
 import { useResumos } from '../hooks/useResumos';
 import jsPDF from 'jspdf';
-
 interface ResumoViewerProps {
   area: string;
   modulo: string;
@@ -20,7 +18,6 @@ interface ResumoViewerProps {
   assuntoId: number;
   onBack: () => void;
 }
-
 const ResumoViewer: React.FC<ResumoViewerProps> = ({
   area,
   modulo,
@@ -36,14 +33,13 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<string>('');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  
-  const { addToRecents } = useResumos();
-
+  const {
+    addToRecents
+  } = useResumos();
   useEffect(() => {
     // Add to recent access when component mounts
     addToRecents(area, modulo, tema, assunto, assuntoId);
   }, [assuntoId, addToRecents, area, modulo, tema, assunto]);
-
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollButton(window.scrollY > 300);
@@ -51,23 +47,19 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   };
-
   const handleExportClick = () => {
     setShowAuthDialog(true);
   };
-
   const handleAuthenticate = async (email: string, password: string) => {
     try {
       setIsGeneratingPDF(true);
       setDownloadStatus('Gerando PDF...');
-      
       const pdf = new jsPDF();
       const margin = 20;
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -82,17 +74,10 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       pdf.text(`${area} > ${modulo} > ${tema}`, margin, 45);
 
       // Content (clean markdown)
-      const cleanContent = resumo
-        .replace(/#{1,6}\s+/g, '')
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/`(.*?)`/g, '$1')
-        .replace(/>\s+/g, '');
-      
+      const cleanContent = resumo.replace(/#{1,6}\s+/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/`(.*?)`/g, '$1').replace(/>\s+/g, '');
       pdf.setFontSize(10);
       const lines = pdf.splitTextToSize(cleanContent, maxWidth);
       pdf.text(lines, margin, 60);
-      
       const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       setDownloadStatus('Abrindo PDF no navegador...');
 
@@ -131,16 +116,11 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       setTimeout(() => setDownloadStatus(''), 3000);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-netflix-black">
-      <div className="container mx-auto py-6 max-w-5xl px-4">
+  return <div className="min-h-screen bg-netflix-black">
+      <div className="container mx-auto py-6 max-w-5xl px-[10px]">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <button 
-            onClick={onBack} 
-            className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-colors"
-          >
+          <button onClick={onBack} className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-colors">
             <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Voltar</span>
           </button>
@@ -150,31 +130,21 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
               <FavoriteButton assuntoId={assuntoId} />
               <CopyButton text={resumo} assunto={assunto} />
 
-              <button 
-                onClick={handleExportClick}
-                disabled={isGeneratingPDF}
-                className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-colors border border-netflix-gray disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGeneratingPDF ? (
-                  <>
+              <button onClick={handleExportClick} disabled={isGeneratingPDF} className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-colors border border-netflix-gray disabled:opacity-50 disabled:cursor-not-allowed">
+                {isGeneratingPDF ? <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-sm font-medium">Gerando PDF...</span>
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Download className="h-4 w-4" />
                     <ExternalLink className="h-4 w-4" />
                     <span className="text-sm font-medium">Baixar PDF</span>
-                  </>
-                )}
+                  </>}
               </button>
             </div>
             
-            {downloadStatus && (
-              <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded">
+            {downloadStatus && <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded">
                 {downloadStatus}
-              </p>
-            )}
+              </p>}
           </div>
         </div>
 
@@ -197,31 +167,19 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         </h1>
 
         {/* Content */}
-        <div className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-8">
+        <div className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-8 px-[22px]">
           <MarkdownRenderer content={resumo} fontSize={fontSize} />
         </div>
       </div>
 
       {/* Floating Controls */}
-      <FloatingControls 
-        fontSize={fontSize} 
-        onFontSizeChange={setFontSize} 
-        onScrollToTop={scrollToTop} 
-        showScrollButton={showScrollButton} 
-      />
+      <FloatingControls fontSize={fontSize} onFontSizeChange={setFontSize} onScrollToTop={scrollToTop} showScrollButton={showScrollButton} />
 
       {/* Floating Glossary */}
       <FloatingGlossary content={glossario} />
 
       {/* Auth Dialog */}
-      <AuthDialog
-        isOpen={showAuthDialog}
-        onClose={() => setShowAuthDialog(false)}
-        onAuthenticate={handleAuthenticate}
-        title={assunto}
-      />
-    </div>
-  );
+      <AuthDialog isOpen={showAuthDialog} onClose={() => setShowAuthDialog(false)} onAuthenticate={handleAuthenticate} title={assunto} />
+    </div>;
 };
-
 export default ResumoViewer;
