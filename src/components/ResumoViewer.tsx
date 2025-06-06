@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, ExternalLink, Loader2, Heart } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, Loader2 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
 import GlossarySection from './GlossarySection';
@@ -29,19 +29,17 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   assuntoId,
   onBack
 }) => {
-  const [fontSize, setFontSize] = useState(16); // Default to 16px as requested
+  const [fontSize, setFontSize] = useState(16);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<string>('');
   
-  const { addToFavorites, removeFromFavorites, addToRecents, isFavorite } = useResumos();
-  const [favorite, setFavorite] = useState(false);
+  const { addToRecents } = useResumos();
 
   useEffect(() => {
-    setFavorite(isFavorite(assuntoId));
     // Add to recent access when component mounts
     addToRecents(area, modulo, tema, assunto, assuntoId);
-  }, [assuntoId, isFavorite, addToRecents, area, modulo, tema, assunto]);
+  }, [assuntoId, addToRecents, area, modulo, tema, assunto]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,19 +54,6 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       top: 0,
       behavior: 'smooth'
     });
-  };
-
-  const handleFavoriteToggle = async () => {
-    try {
-      if (favorite) {
-        await removeFromFavorites(assuntoId);
-      } else {
-        await addToFavorites(area, modulo, tema, assunto, assuntoId);
-      }
-      setFavorite(!favorite);
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-    }
   };
 
   const exportToPDF = async () => {
@@ -148,20 +133,6 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
           
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleFavoriteToggle}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors border ${
-                  favorite
-                    ? 'bg-netflix-red text-white border-netflix-red'
-                    : 'bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray border-netflix-gray'
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
-                <span className="text-sm font-medium">
-                  {favorite ? 'Favoritado' : 'Favoritar'}
-                </span>
-              </button>
-
               <CopyButton text={resumo} assunto={assunto} />
 
               <button
