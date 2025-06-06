@@ -70,13 +70,13 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
 
     // Search areas
     const areas = getAreas();
-    areas.forEach(({ area, modulosCount }) => {
+    areas.forEach(({ area, resumosCount }) => {
       if (area.toLowerCase().includes(lowerTerm)) {
         searchResults.push({
           type: 'area',
           area,
           title: area,
-          subtitle: `${modulosCount} módulos disponíveis`,
+          subtitle: `${resumosCount} resumos disponíveis`,
           path: { area }
         });
       }
