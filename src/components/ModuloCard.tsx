@@ -24,7 +24,7 @@ const ModuloCard: React.FC<ModuloCardProps> = ({
                 Módulo {numero}
               </span>
             </div>
-            <h3 className="text-lg font-semibold text-netflix-lightGray mb-2 line-clamp-2">
+            <h3 className="font-semibold text-netflix-lightGray mb-2 line-clamp-2 text-base">
               {nome}
             </h3>
             <p className="text-gray-400 text-sm">
