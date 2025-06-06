@@ -66,9 +66,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       }
 
       // Regular paragraphs
-      return <p key={key} className="text-gray-300 mb-1 leading-relaxed" style={{
+      return <p key={key} style={{
         fontSize: `${fontSize}px`
-      }}>
+      }} className="text-gray-300 mb-1 leading-relaxed px-0">
           {parseInlineMarkdown(line)}
         </p>;
     });
