@@ -71,7 +71,7 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
     // Search areas
     const areas = getAreas();
     areas.forEach(({ area, resumosCount }) => {
-      if (area.toLowerCase().includes(lowerTerm)) {
+      if (area && area.toLowerCase().includes(lowerTerm)) {
         searchResults.push({
           type: 'area',
           area,
@@ -84,10 +84,12 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
 
     // Search modules, themes, and subjects
     areas.forEach(({ area }) => {
+      if (!area) return;
+      
       const modulos = getModulosByArea(area);
       
       modulos.forEach(({ numero, nome, temasCount }) => {
-        if (nome.toLowerCase().includes(lowerTerm)) {
+        if (nome && nome.toLowerCase().includes(lowerTerm)) {
           searchResults.push({
             type: 'modulo',
             area,
@@ -99,7 +101,7 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
 
         const temas = getTemasByModulo(area, numero);
         temas.forEach(({ numero: numeroTema, nome: nomeTema, assuntosCount }) => {
-          if (nomeTema.toLowerCase().includes(lowerTerm)) {
+          if (nomeTema && nomeTema.toLowerCase().includes(lowerTerm)) {
             searchResults.push({
               type: 'tema',
               area,
@@ -111,17 +113,18 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
 
           const assuntos = getAssuntosByTema(area, numero, numeroTema);
           assuntos.forEach(({ titulo, texto }) => {
-            if (titulo.toLowerCase().includes(lowerTerm) || texto.toLowerCase().includes(lowerTerm)) {
-              const contentSnippet = texto.length > 100 ? 
-                texto.substring(0, 100) + '...' : texto;
+            if ((titulo && titulo.toLowerCase().includes(lowerTerm)) || 
+                (texto && texto.toLowerCase().includes(lowerTerm))) {
+              const contentSnippet = texto && texto.length > 100 ? 
+                texto.substring(0, 100) + '...' : (texto || '');
               
               searchResults.push({
                 type: 'assunto',
                 area,
-                title: titulo,
+                title: titulo || 'Sem título',
                 subtitle: `${area} • ${nome} • ${nomeTema}`,
                 content: contentSnippet,
-                path: { area, modulo: `${numero}-${nome}`, tema: `${numeroTema}-${nomeTema}`, assunto: titulo }
+                path: { area, modulo: `${numero}-${nome}`, tema: `${numeroTema}-${nomeTema}`, assunto: titulo || '' }
               });
             }
           });
