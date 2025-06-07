@@ -4874,6 +4874,39 @@ export type Database = {
         }
         Relationships: []
       }
+      resumos_favoritos: {
+        Row: {
+          area: string
+          assunto: string
+          assunto_id: number
+          created_at: string
+          id: string
+          modulo: string
+          tema: string
+          user_id: string
+        }
+        Insert: {
+          area: string
+          assunto: string
+          assunto_id: number
+          created_at?: string
+          id?: string
+          modulo: string
+          tema: string
+          user_id: string
+        }
+        Update: {
+          area?: string
+          assunto?: string
+          assunto_id?: number
+          created_at?: string
+          id?: string
+          modulo?: string
+          tema?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       RESUMOS_pro: {
         Row: {
           area: string | null
@@ -4910,6 +4943,39 @@ export type Database = {
           numero_do_tema?: string | null
           texto?: string | null
           titulo_do_assunto?: string | null
+        }
+        Relationships: []
+      }
+      resumos_recentes: {
+        Row: {
+          accessed_at: string
+          area: string
+          assunto: string
+          assunto_id: number
+          id: string
+          modulo: string
+          tema: string
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          area: string
+          assunto: string
+          assunto_id: number
+          id?: string
+          modulo: string
+          tema: string
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          area?: string
+          assunto?: string
+          assunto_id?: number
+          id?: string
+          modulo?: string
+          tema?: string
+          user_id?: string
         }
         Relationships: []
       }

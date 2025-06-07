@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -43,9 +44,8 @@ export const useResumos = () => {
 
   useEffect(() => {
     fetchResumos();
-    // Temporarily disable favorites and recents until tables are properly set up
-    // fetchFavorites();
-    // fetchRecents();
+    fetchFavorites();
+    fetchRecents();
   }, []);
 
   const fetchResumos = async () => {
@@ -69,20 +69,104 @@ export const useResumos = () => {
     }
   };
 
-  // Temporarily disable these functions until proper tables are set up
+  const fetchFavorites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('resumos_favoritos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFavorites(data || []);
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+    }
+  };
+
+  const fetchRecents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('resumos_recentes')
+        .select('*')
+        .order('accessed_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setRecents(data || []);
+    } catch (err) {
+      console.error('Error fetching recents:', err);
+    }
+  };
+
   const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    console.log('Add to favorites:', { area, modulo, tema, assunto, assuntoId });
-    // Will implement when proper tables are available
+    try {
+      const { error } = await supabase
+        .from('resumos_favoritos')
+        .insert({
+          area,
+          modulo,
+          tema,
+          assunto,
+          assunto_id: assuntoId,
+        });
+
+      if (error) throw error;
+      await fetchFavorites();
+    } catch (err) {
+      console.error('Error adding to favorites:', err);
+    }
   };
 
   const removeFromFavorites = async (assuntoId: number) => {
-    console.log('Remove from favorites:', assuntoId);
-    // Will implement when proper tables are available
+    try {
+      const { error } = await supabase
+        .from('resumos_favoritos')
+        .delete()
+        .eq('assunto_id', assuntoId);
+
+      if (error) throw error;
+      await fetchFavorites();
+    } catch (err) {
+      console.error('Error removing from favorites:', err);
+    }
   };
 
   const addToRecents = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    console.log('Add to recents:', { area, modulo, tema, assunto, assuntoId });
-    // Will implement when proper tables are available
+    try {
+      // First try to update existing entry
+      const { data: existing } = await supabase
+        .from('resumos_recentes')
+        .select('id')
+        .eq('assunto_id', assuntoId)
+        .single();
+
+      if (existing) {
+        // Update existing entry's timestamp
+        const { error } = await supabase
+          .from('resumos_recentes')
+          .update({ accessed_at: new Date().toISOString() })
+          .eq('id', existing.id);
+
+        if (error) throw error;
+      } else {
+        // Create new entry
+        const { error } = await supabase
+          .from('resumos_recentes')
+          .insert({
+            area,
+            modulo,
+            tema,
+            assunto,
+            assunto_id: assuntoId,
+          });
+
+        if (error) throw error;
+      }
+
+      await fetchRecents();
+    } catch (err) {
+      console.error('Error adding to recents:', err);
+    }
   };
 
   const isFavorite = (assuntoId: number) => {

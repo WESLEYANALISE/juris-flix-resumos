@@ -1,16 +1,14 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Clock, TrendingUp } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import React, { useState, useMemo } from 'react';
+import { Search, X } from 'lucide-react';
 import { useResumos } from '../hooks/useResumos';
-import { getAreaColors } from '../utils/areaColors';
+import MiniMarkdownRenderer from './MiniMarkdownRenderer';
 
 interface SearchResult {
   type: 'area' | 'modulo' | 'tema' | 'assunto';
-  area: string;
   title: string;
   subtitle?: string;
-  content?: string;
+  preview?: string;
   path: {
     area: string;
     modulo?: string;
@@ -30,216 +28,189 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
   onSearchChange,
   onResultClick
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const searchRef = useRef<HTMLDivElement>(null);
-  const { getAreas, getModulosByArea, getTemasByModulo, getAssuntosByTema } = useResumos();
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const { resumos } = useResumos();
 
-  useEffect(() => {
-    const savedSearches = localStorage.getItem('recent-searches');
-    if (savedSearches) {
-      setRecentSearches(JSON.parse(savedSearches));
-    }
-  }, []);
+  const searchResults = useMemo(() => {
+    if (!searchTerm || searchTerm.length < 2) return [];
 
-  useEffect(() => {
-    if (searchTerm.trim().length > 1) {
-      performSearch(searchTerm.trim());
-      setIsOpen(true);
-    } else {
-      setResults([]);
-      setIsOpen(false);
-    }
-  }, [searchTerm]);
+    const results: SearchResult[] = [];
+    const searchLower = searchTerm.toLowerCase();
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
+    // Search through resumos
+    resumos.forEach(resumo => {
+      const areaMatch = resumo.area?.toLowerCase().includes(searchLower);
+      const moduloMatch = resumo.nome_do_modulo?.toLowerCase().includes(searchLower);
+      const temaMatch = resumo.nome_do_tema?.toLowerCase().includes(searchLower);
+      const assuntoMatch = resumo.titulo_do_assunto?.toLowerCase().includes(searchLower);
+      const contentMatch = resumo.texto?.toLowerCase().includes(searchLower);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const performSearch = (term: string) => {
-    const searchResults: SearchResult[] = [];
-    const lowerTerm = term.toLowerCase();
-
-    // Search areas
-    const areas = getAreas();
-    areas.forEach(({ area, resumosCount }) => {
-      if (area && area.toLowerCase().includes(lowerTerm)) {
-        searchResults.push({
-          type: 'area',
-          area,
-          title: area,
-          subtitle: `${resumosCount} resumos disponíveis`,
-          path: { area }
-        });
-      }
-    });
-
-    // Search modules, themes, and subjects
-    areas.forEach(({ area }) => {
-      if (!area) return;
-      
-      const modulos = getModulosByArea(area);
-      
-      modulos.forEach(({ numero, nome, temasCount }) => {
-        if (nome && nome.toLowerCase().includes(lowerTerm)) {
-          searchResults.push({
-            type: 'modulo',
-            area,
-            title: nome,
-            subtitle: `${area} • ${temasCount} temas`,
-            path: { area, modulo: `${numero}-${nome}` }
-          });
-        }
-
-        const temas = getTemasByModulo(area, numero);
-        temas.forEach(({ numero: numeroTema, nome: nomeTema, assuntosCount }) => {
-          if (nomeTema && nomeTema.toLowerCase().includes(lowerTerm)) {
-            searchResults.push({
-              type: 'tema',
-              area,
-              title: nomeTema,
-              subtitle: `${area} • ${nome} • ${assuntosCount} assuntos`,
-              path: { area, modulo: `${numero}-${nome}`, tema: `${numeroTema}-${nomeTema}` }
-            });
+      if (assuntoMatch || contentMatch) {
+        results.push({
+          type: 'assunto',
+          title: resumo.titulo_do_assunto,
+          subtitle: `${resumo.area} › ${resumo.nome_do_modulo} › ${resumo.nome_do_tema}`,
+          preview: resumo.texto,
+          path: {
+            area: resumo.area,
+            modulo: `${resumo.numero_do_modulo}-${resumo.nome_do_modulo}`,
+            tema: `${resumo.numero_do_tema}-${resumo.nome_do_tema}`,
+            assunto: resumo.titulo_do_assunto
           }
-
-          const assuntos = getAssuntosByTema(area, numero, numeroTema);
-          assuntos.forEach(({ titulo, texto }) => {
-            if ((titulo && titulo.toLowerCase().includes(lowerTerm)) || 
-                (texto && texto.toLowerCase().includes(lowerTerm))) {
-              const contentSnippet = texto && texto.length > 100 ? 
-                texto.substring(0, 100) + '...' : (texto || '');
-              
-              searchResults.push({
-                type: 'assunto',
-                area,
-                title: titulo || 'Sem título',
-                subtitle: `${area} • ${nome} • ${nomeTema}`,
-                content: contentSnippet,
-                path: { area, modulo: `${numero}-${nome}`, tema: `${numeroTema}-${nomeTema}`, assunto: titulo || '' }
-              });
+        });
+      } else if (temaMatch) {
+        const existing = results.find(r => 
+          r.type === 'tema' && 
+          r.path.area === resumo.area && 
+          r.path.modulo === `${resumo.numero_do_modulo}-${resumo.nome_do_modulo}` &&
+          r.title === resumo.nome_do_tema
+        );
+        
+        if (!existing) {
+          results.push({
+            type: 'tema',
+            title: resumo.nome_do_tema,
+            subtitle: `${resumo.area} › ${resumo.nome_do_modulo}`,
+            path: {
+              area: resumo.area,
+              modulo: `${resumo.numero_do_modulo}-${resumo.nome_do_modulo}`,
+              tema: `${resumo.numero_do_tema}-${resumo.nome_do_tema}`
             }
           });
-        });
-      });
+        }
+      } else if (moduloMatch) {
+        const existing = results.find(r => 
+          r.type === 'modulo' && 
+          r.path.area === resumo.area && 
+          r.title === resumo.nome_do_modulo
+        );
+        
+        if (!existing) {
+          results.push({
+            type: 'modulo',
+            title: resumo.nome_do_modulo,
+            subtitle: resumo.area,
+            path: {
+              area: resumo.area,
+              modulo: `${resumo.numero_do_modulo}-${resumo.nome_do_modulo}`
+            }
+          });
+        }
+      } else if (areaMatch) {
+        const existing = results.find(r => r.type === 'area' && r.title === resumo.area);
+        
+        if (!existing) {
+          results.push({
+            type: 'area',
+            title: resumo.area,
+            path: {
+              area: resumo.area
+            }
+          });
+        }
+      }
     });
 
-    setResults(searchResults.slice(0, 8)); // Limit to 8 results
+    return results.slice(0, 8); // Limit results
+  }, [searchTerm, resumos]);
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'area': return '📚';
+      case 'modulo': return '📖';
+      case 'tema': return '📝';
+      case 'assunto': return '📄';
+      default: return '🔍';
+    }
   };
 
-  const handleResultClick = (result: SearchResult) => {
-    // Save to recent searches
-    const updatedRecent = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 5);
-    setRecentSearches(updatedRecent);
-    localStorage.setItem('recent-searches', JSON.stringify(updatedRecent));
-    
-    setIsOpen(false);
-    onResultClick(result);
-  };
-
-  const clearSearch = () => {
-    onSearchChange('');
-    setIsOpen(false);
-  };
-
-  const handleRecentSearch = (search: string) => {
-    onSearchChange(search);
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'area': return 'Área';
+      case 'modulo': return 'Módulo';
+      case 'tema': return 'Tema';
+      case 'assunto': return 'Assunto';
+      default: return '';
+    }
   };
 
   return (
-    <div ref={searchRef} className="relative w-full max-w-2xl mx-auto mb-8">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-netflix-lightGray h-5 w-5" />
-        <Input
-          type="text"
-          placeholder="Pesquisar áreas, módulos, temas ou resumos..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onFocus={() => setIsOpen(true)}
-          className="pl-12 pr-12 py-3 w-full bg-netflix-darkGray border-netflix-gray text-netflix-lightGray placeholder-gray-400 focus:border-netflix-red focus:ring-netflix-red rounded-lg text-lg transition-all duration-300"
-        />
-        {searchTerm && (
-          <button
-            onClick={clearSearch}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-netflix-red transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
-      </div>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-netflix-darkGray border border-netflix-gray rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto animate-fade-in">
-          {results.length > 0 ? (
-            <div className="p-2">
-              <div className="text-xs font-medium text-gray-400 px-3 py-2 flex items-center gap-2">
-                <TrendingUp className="h-3 w-3" />
-                Resultados da busca
-              </div>
-              {results.map((result, index) => {
-                const colors = getAreaColors(result.area);
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleResultClick(result)}
-                    className="w-full text-left p-3 rounded-lg hover:bg-netflix-gray transition-all duration-200 group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div 
-                        className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
-                        style={{ backgroundColor: colors.primary }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-netflix-lightGray group-hover:text-white transition-colors">
-                          {result.title}
-                        </div>
-                        <div className="text-sm text-gray-400 truncate">
-                          {result.subtitle}
-                        </div>
-                        {result.content && (
-                          <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {result.content}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : searchTerm.length > 1 ? (
-            <div className="p-4 text-center text-gray-400">
-              Nenhum resultado encontrado
-            </div>
-          ) : (
-            recentSearches.length > 0 && (
-              <div className="p-2">
-                <div className="text-xs font-medium text-gray-400 px-3 py-2 flex items-center gap-2">
-                  <Clock className="h-3 w-3" />
-                  Buscas recentes
-                </div>
-                {recentSearches.map((search, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleRecentSearch(search)}
-                    className="w-full text-left p-3 rounded-lg hover:bg-netflix-gray transition-colors text-netflix-lightGray"
-                  >
-                    {search}
-                  </button>
-                ))}
-              </div>
-            )
+    <div className="relative mb-8 animate-fade-in">
+      <div className="max-w-2xl mx-auto">
+        <div className={`relative transition-all duration-300 ${isSearchFocused ? 'transform scale-105' : ''}`}>
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar resumos, temas, áreas..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+            className="w-full pl-12 pr-12 py-4 bg-netflix-darkGray border border-netflix-gray rounded-xl text-netflix-lightGray placeholder-gray-400 focus:outline-none focus:border-netflix-red focus:ring-1 focus:ring-netflix-red transition-all duration-300"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-netflix-red transition-colors"
+            >
+              <X />
+            </button>
           )}
         </div>
-      )}
+
+        {/* Search Results */}
+        {isSearchFocused && searchResults.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-netflix-darkGray border border-netflix-gray rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto animate-slide-in-top">
+            {searchResults.map((result, index) => (
+              <div
+                key={`${result.type}-${result.title}-${index}`}
+                onClick={() => {
+                  onResultClick(result);
+                  setIsSearchFocused(false);
+                }}
+                className="flex items-start gap-4 p-4 hover:bg-netflix-gray cursor-pointer transition-all duration-200 border-b border-netflix-gray/30 last:border-b-0 hover:scale-[1.02] transform"
+              >
+                <div className="text-2xl flex-shrink-0 mt-1">
+                  {getTypeIcon(result.type)}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs px-2 py-1 bg-netflix-red/20 text-netflix-red rounded-full font-medium">
+                      {getTypeLabel(result.type)}
+                    </span>
+                  </div>
+                  
+                  <h3 className="font-semibold text-netflix-lightGray mb-1 line-clamp-1">
+                    {result.title}
+                  </h3>
+                  
+                  {result.subtitle && (
+                    <p className="text-sm text-gray-400 mb-2 line-clamp-1">
+                      {result.subtitle}
+                    </p>
+                  )}
+                  
+                  {result.preview && (
+                    <div className="mt-2">
+                      <MiniMarkdownRenderer content={result.preview} maxLength={150} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* No Results */}
+        {isSearchFocused && searchTerm.length >= 2 && searchResults.length === 0 && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-netflix-darkGray border border-netflix-gray rounded-xl shadow-2xl z-50 p-6 text-center animate-fade-in">
+            <Search className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">Nenhum resultado encontrado para "{searchTerm}"</p>
+            <p className="text-sm text-gray-500 mt-2">Tente usar palavras-chave diferentes</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
