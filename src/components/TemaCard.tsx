@@ -33,46 +33,46 @@ const TemaCard: React.FC<TemaCardProps> = ({
     return BookOpen;
   };
 
-  // Generate color based on area and module
-  const getCardColor = (area: string, modulo: string, tema: string) => {
-    const combinedText = area + modulo + tema;
+  // Use the same color logic as ModuloCard (based on area + module number)
+  const getCardColor = (area: string, numero: string) => {
+    const combinedText = area + numero;
     const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
     
     const colors = [
-      'bg-emerald-500/20 border-emerald-500/40 hover:border-emerald-400',
-      'bg-violet-500/20 border-violet-500/40 hover:border-violet-400',
-      'bg-amber-500/20 border-amber-500/40 hover:border-amber-400',
-      'bg-rose-500/20 border-rose-500/40 hover:border-rose-400',
-      'bg-sky-500/20 border-sky-500/40 hover:border-sky-400',
-      'bg-lime-500/20 border-lime-500/40 hover:border-lime-400',
-      'bg-fuchsia-500/20 border-fuchsia-500/40 hover:border-fuchsia-400',
-      'bg-slate-500/20 border-slate-500/40 hover:border-slate-400',
+      'bg-red-500/15 border-red-500/30 hover:border-red-400',
+      'bg-blue-500/15 border-blue-500/30 hover:border-blue-400',
+      'bg-green-500/15 border-green-500/30 hover:border-green-400',
+      'bg-yellow-500/15 border-yellow-500/30 hover:border-yellow-400',
+      'bg-purple-500/15 border-purple-500/30 hover:border-purple-400',
+      'bg-pink-500/15 border-pink-500/30 hover:border-pink-400',
+      'bg-indigo-500/15 border-indigo-500/30 hover:border-indigo-400',
+      'bg-teal-500/15 border-teal-500/30 hover:border-teal-400',
     ];
     
     return colors[hash % colors.length];
   };
 
-  const getIconColor = (area: string, modulo: string, tema: string) => {
-    const combinedText = area + modulo + tema;
+  const getIconColor = (area: string, numero: string) => {
+    const combinedText = area + numero;
     const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
     
     const colors = [
-      'text-emerald-400',
-      'text-violet-400',
-      'text-amber-400',
-      'text-rose-400',
-      'text-sky-400',
-      'text-lime-400',
-      'text-fuchsia-400',
-      'text-slate-400',
+      'text-red-400',
+      'text-blue-400', 
+      'text-green-400',
+      'text-yellow-400',
+      'text-purple-400',
+      'text-pink-400',
+      'text-indigo-400',
+      'text-teal-400',
     ];
     
     return colors[hash % colors.length];
   };
 
   const TemaIcon = getTemaIcon(tema);
-  const cardColorClass = getCardColor(area, modulo, tema);
-  const iconColorClass = getIconColor(area, modulo, tema);
+  const cardColorClass = getCardColor(area, modulo);
+  const iconColorClass = getIconColor(area, modulo);
 
   return (
     <button 
