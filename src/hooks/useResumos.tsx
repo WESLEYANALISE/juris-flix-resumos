@@ -104,7 +104,7 @@ export const useResumos = () => {
     
     try {
       const { data, error } = await supabase
-        .from('resumos_favoritos')
+        .from('user_favorites')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -120,7 +120,7 @@ export const useResumos = () => {
     
     try {
       const { data, error } = await supabase
-        .from('resumos_recentes')
+        .from('user_recents')
         .select('*')
         .order('accessed_at', { ascending: false })
         .limit(10);
@@ -139,16 +139,9 @@ export const useResumos = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not found');
-        return;
-      }
-
       const { error } = await supabase
-        .from('resumos_favoritos')
+        .from('user_favorites')
         .insert({
-          user_id: user.id,
           area,
           modulo,
           tema,
@@ -170,16 +163,9 @@ export const useResumos = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not found');
-        return;
-      }
-
       const { error } = await supabase
-        .from('resumos_favoritos')
+        .from('user_favorites')
         .delete()
-        .eq('user_id', user.id)
         .eq('assunto_id', assuntoId);
 
       if (error) throw error;
@@ -196,44 +182,15 @@ export const useResumos = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not found');
-        return;
-      }
+      const { error } = await supabase.rpc('update_user_recent', {
+        p_area: area,
+        p_modulo: modulo,
+        p_tema: tema,
+        p_assunto: assunto,
+        p_assunto_id: assuntoId
+      });
 
-      // First try to update existing entry
-      const { data: existing } = await supabase
-        .from('resumos_recentes')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('assunto_id', assuntoId)
-        .single();
-
-      if (existing) {
-        // Update existing entry's timestamp
-        const { error } = await supabase
-          .from('resumos_recentes')
-          .update({ accessed_at: new Date().toISOString() })
-          .eq('id', existing.id);
-
-        if (error) throw error;
-      } else {
-        // Create new entry
-        const { error } = await supabase
-          .from('resumos_recentes')
-          .insert({
-            user_id: user.id,
-            area,
-            modulo,
-            tema,
-            assunto,
-            assunto_id: assuntoId,
-          });
-
-        if (error) throw error;
-      }
-
+      if (error) throw error;
       await fetchRecents();
     } catch (err) {
       console.error('Error adding to recents:', err);
