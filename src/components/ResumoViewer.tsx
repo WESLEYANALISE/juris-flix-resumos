@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, ExternalLink, Loader2 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -78,6 +77,34 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     }
   };
 
+  const cleanMarkdownForPDF = (text: string) => {
+    // More careful markdown cleaning that preserves content
+    let cleaned = text;
+    
+    // Remove headers but keep the text
+    cleaned = cleaned.replace(/^#{1,6}\s+(.+)$/gm, '$1');
+    
+    // Convert bold to plain text but keep content
+    cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1');
+    
+    // Convert italic to plain text but keep content
+    cleaned = cleaned.replace(/\*(.*?)\*/g, '$1');
+    
+    // Convert inline code to plain text but keep content
+    cleaned = cleaned.replace(/`(.*?)`/g, '$1');
+    
+    // Remove blockquote markers but keep content
+    cleaned = cleaned.replace(/^>\s+(.+)$/gm, '$1');
+    
+    // Remove multiple line breaks
+    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
+    
+    // Trim whitespace
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  };
+
   const handleAuthenticate = async (email: string, password: string) => {
     try {
       setIsGeneratingPDF(true);
@@ -86,23 +113,54 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       const pdf = new jsPDF();
       const margin = 20;
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       const maxWidth = pageWidth - 2 * margin;
+      let currentY = 30;
 
       // Title
       pdf.setFontSize(16);
-      pdf.text(assunto, margin, 30);
+      pdf.setFont('helvetica', 'bold');
+      const titleLines = pdf.splitTextToSize(assunto, maxWidth);
+      pdf.text(titleLines, margin, currentY);
+      currentY += titleLines.length * 8 + 10;
 
       // Subtitle
       pdf.setFontSize(12);
-      pdf.text(`${area} > ${modulo} > ${tema}`, margin, 45);
+      pdf.setFont('helvetica', 'normal');
+      const subtitle = `${area} > ${modulo} > ${tema}`;
+      const subtitleLines = pdf.splitTextToSize(subtitle, maxWidth);
+      pdf.text(subtitleLines, margin, currentY);
+      currentY += subtitleLines.length * 6 + 15;
 
-      // Content (clean markdown)
-      const cleanContent = resumo.replace(/#{1,6}\s+/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/`(.*?)`/g, '$1').replace(/>\s+/g, '');
-      pdf.setFontSize(10);
-      const lines = pdf.splitTextToSize(cleanContent, maxWidth);
-      pdf.text(lines, margin, 60);
+      // Content cleaning and verification
+      const cleanContent = cleanMarkdownForPDF(resumo);
       
-      const fileName = `${assunto.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      if (!cleanContent || cleanContent.trim().length === 0) {
+        throw new Error('Conteúdo vazio após limpeza');
+      }
+
+      console.log('Clean content length:', cleanContent.length);
+      console.log('Clean content preview:', cleanContent.substring(0, 200));
+
+      // Content
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      
+      // Split content into lines that fit the page width
+      const contentLines = pdf.splitTextToSize(cleanContent, maxWidth);
+      
+      for (let i = 0; i < contentLines.length; i++) {
+        // Check if we need a new page
+        if (currentY + 6 > pageHeight - margin) {
+          pdf.addPage();
+          currentY = margin;
+        }
+        
+        pdf.text(contentLines[i], margin, currentY);
+        currentY += 6;
+      }
+      
+      const fileName = `${assunto.replace(/[^a-zA-Z0-9\s]/g, '_').replace(/\s+/g, '_')}.pdf`;
       setDownloadStatus('Preparando download...');
 
       // Create download link and force download
@@ -136,7 +194,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       setDownloadStatus('Erro ao gerar PDF');
-      alert('Erro ao gerar PDF. Tente novamente.');
+      alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setIsGeneratingPDF(false);
       setTimeout(() => setDownloadStatus(''), 3000);
@@ -226,10 +284,8 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         showScrollButton={showScrollButton} 
       />
 
-      {/* Floating Glossary - moved to right */}
-      <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-40">
-        <FloatingGlossary content={glossario} />
-      </div>
+      {/* Floating Glossary */}
+      <FloatingGlossary content={glossario} />
 
       {/* Auth Dialog */}
       <AuthDialog 
