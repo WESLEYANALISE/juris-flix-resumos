@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Heart, ExternalLink } from 'lucide-react';
+import { Heart, ExternalLink, User } from 'lucide-react';
 
 interface FavoriteItem {
   id: string;
@@ -15,9 +15,26 @@ interface FavoriteItem {
 interface FavoritesListProps {
   favorites: FavoriteItem[];
   onSubjectClick: (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => void;
+  isAuthenticated?: boolean;
 }
 
-const FavoritesList: React.FC<FavoritesListProps> = ({ favorites, onSubjectClick }) => {
+const FavoritesList: React.FC<FavoritesListProps> = ({ favorites, onSubjectClick, isAuthenticated = false }) => {
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-12 animate-fade-in">
+        <User className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-netflix-lightGray mb-4">Favoritos</h2>
+        <p className="text-gray-400 mb-4">Você precisa estar logado para ver seus favoritos.</p>
+        <button
+          onClick={() => window.location.href = '/auth'}
+          className="bg-netflix-red hover:bg-netflix-darkRed text-white px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          Fazer Login
+        </button>
+      </div>
+    );
+  }
+
   if (favorites.length === 0) {
     return (
       <div className="text-center py-12 animate-fade-in">
@@ -43,7 +60,7 @@ const FavoritesList: React.FC<FavoritesListProps> = ({ favorites, onSubjectClick
         {favorites.map((favorite, index) => (
           <div
             key={favorite.id}
-            className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-6 hover:border-netflix-red/50 transition-all duration-300 cursor-pointer transform hover:scale-105 hover:shadow-2xl hover:shadow-netflix-red/20 animate-slide-in-up"
+            className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-6 hover:border-netflix-red/50 transition-all duration-300 cursor-pointer transform hover:scale-105 hover:shadow-2xl hover:shadow-netflix-red/20 animate-slide-in-up group"
             style={{ animationDelay: `${index * 100}ms` }}
             onClick={() => onSubjectClick(
               favorite.area,
@@ -58,13 +75,13 @@ const FavoritesList: React.FC<FavoritesListProps> = ({ favorites, onSubjectClick
               <ExternalLink className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             
-            <h3 className="text-lg font-semibold text-netflix-lightGray mb-2 line-clamp-2">
+            <h3 className="text-lg font-semibold text-netflix-lightGray mb-2 line-clamp-2 break-words">
               {favorite.assunto}
             </h3>
             
             <div className="text-sm text-gray-400 space-y-1">
-              <p>{favorite.area}</p>
-              <p className="text-xs">{favorite.modulo} › {favorite.tema}</p>
+              <p className="break-words">{favorite.area}</p>
+              <p className="text-xs break-words">{favorite.modulo} › {favorite.tema}</p>
             </div>
             
             <div className="mt-4 text-xs text-gray-500">

@@ -41,11 +41,41 @@ export const useResumos = () => {
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     fetchResumos();
-    fetchFavorites();
-    fetchRecents();
+    
+    // Check initial auth state
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      if (session) {
+        fetchFavorites();
+        fetchRecents();
+      }
+    };
+    
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const wasAuthenticated = isAuthenticated;
+      const isNowAuthenticated = !!session;
+      setIsAuthenticated(isNowAuthenticated);
+      
+      if (isNowAuthenticated && !wasAuthenticated) {
+        // User just logged in
+        fetchFavorites();
+        fetchRecents();
+      } else if (!isNowAuthenticated && wasAuthenticated) {
+        // User just logged out
+        setFavorites([]);
+        setRecents([]);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchResumos = async () => {
@@ -70,6 +100,8 @@ export const useResumos = () => {
   };
 
   const fetchFavorites = async () => {
+    if (!isAuthenticated) return;
+    
     try {
       const { data, error } = await supabase
         .from('resumos_favoritos')
@@ -84,6 +116,8 @@ export const useResumos = () => {
   };
 
   const fetchRecents = async () => {
+    if (!isAuthenticated) return;
+    
     try {
       const { data, error } = await supabase
         .from('resumos_recentes')
@@ -99,10 +133,15 @@ export const useResumos = () => {
   };
 
   const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    if (!isAuthenticated) {
+      console.error('User not authenticated');
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('User not authenticated');
+        console.error('User not found');
         return;
       }
 
@@ -125,10 +164,15 @@ export const useResumos = () => {
   };
 
   const removeFromFavorites = async (assuntoId: number) => {
+    if (!isAuthenticated) {
+      console.error('User not authenticated');
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('User not authenticated');
+        console.error('User not found');
         return;
       }
 
@@ -146,10 +190,15 @@ export const useResumos = () => {
   };
 
   const addToRecents = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    if (!isAuthenticated) {
+      console.error('User not authenticated');
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('User not authenticated');
+        console.error('User not found');
         return;
       }
 
@@ -192,6 +241,7 @@ export const useResumos = () => {
   };
 
   const isFavorite = (assuntoId: number) => {
+    if (!isAuthenticated) return false;
     return favorites.some(fav => fav.assunto_id === assuntoId);
   };
 
@@ -282,6 +332,7 @@ export const useResumos = () => {
     recents,
     loading,
     error,
+    isAuthenticated,
     getAreas,
     getModulosByArea,
     getTemasByModulo,

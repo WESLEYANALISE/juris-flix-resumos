@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
@@ -57,6 +56,7 @@ const Index = () => {
     error,
     favorites,
     recents,
+    isAuthenticated,
     getAreas,
     getModulosByArea,
     getTemasByModulo,
@@ -156,10 +156,15 @@ const Index = () => {
     }
     
     setActiveTab('home');
-    setSearchTerm(''); // Clear search when navigating
+    setSearchTerm('');
   };
 
   const handleToggleFavorite = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    if (!isAuthenticated) {
+      alert('Você precisa estar logado para favoritar resumos.');
+      return;
+    }
+
     if (isFavorite(assuntoId)) {
       removeFromFavorites(assuntoId);
     } else {
@@ -175,7 +180,8 @@ const Index = () => {
       return (
         <FavoritesList 
           favorites={favorites} 
-          onSubjectClick={handleSubjectClick} 
+          onSubjectClick={handleSubjectClick}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -184,7 +190,8 @@ const Index = () => {
       return (
         <RecentsList 
           recents={recents} 
-          onSubjectClick={handleSubjectClick} 
+          onSubjectClick={handleSubjectClick}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -233,7 +240,7 @@ const Index = () => {
               ← Voltar para áreas
             </button>
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold text-netflix-lightGray">{viewState.area}</h2>
+              <h2 className="text-3xl font-bold text-netflix-lightGray break-words">{viewState.area}</h2>
               <p className="text-gray-400">Selecione um módulo para continuar</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -273,8 +280,8 @@ const Index = () => {
               ← Voltar para módulos
             </button>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-netflix-lightGray">{viewState.nomeModulo}</h2>
-              <p className="text-gray-400">{viewState.area}</p>
+              <h2 className="text-2xl font-bold text-netflix-lightGray break-words">{viewState.nomeModulo}</h2>
+              <p className="text-gray-400 break-words">{viewState.area}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {temas.map(({ numero, nome, assuntosCount }) => (
@@ -315,8 +322,8 @@ const Index = () => {
               ← Voltar para temas
             </button>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-netflix-lightGray">{viewState.nomeTema}</h2>
-              <p className="text-gray-400">{viewState.area} › {viewState.nomeModulo}</p>
+              <h2 className="text-2xl font-bold text-netflix-lightGray break-words">{viewState.nomeTema}</h2>
+              <p className="text-gray-400 break-words">{viewState.area} › {viewState.nomeModulo}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {assuntos.map(({ id, titulo }) => (
