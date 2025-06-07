@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
 import FloatingGlossary from './FloatingGlossary';
@@ -7,6 +7,7 @@ import FavoriteButton from './FavoriteButton';
 import CopyButton from './CopyButton';
 import AuthDialog from './AuthDialog';
 import { useResumos } from '../hooks/useResumos';
+import { useIsMobile } from '../hooks/useIsMobile';
 import jsPDF from 'jspdf';
 
 interface ResumoViewerProps {
@@ -35,6 +36,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<string>('');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const isMobile = useIsMobile();
   
   const {
     addToRecents,
@@ -78,7 +80,6 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   };
 
   const cleanMarkdownForPDF = (text: string) => {
-    // More careful markdown cleaning that preserves content
     let cleaned = text;
     
     // Remove headers but keep the text
@@ -103,6 +104,44 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     cleaned = cleaned.trim();
     
     return cleaned;
+  };
+
+  const downloadPDFMobile = (pdfBlob: Blob, fileName: string) => {
+    // Para mobile, criar um iframe oculto para download
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    
+    const url = URL.createObjectURL(pdfBlob);
+    iframe.src = url;
+    
+    // Remover iframe após 5 segundos
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      URL.revokeObjectURL(url);
+    }, 5000);
+    
+    // Também criar link de download como fallback
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+  };
+
+  const downloadPDFDesktop = (pdfBlob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
   };
 
   const handleAuthenticate = async (email: string, password: string) => {
@@ -139,9 +178,6 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         throw new Error('Conteúdo vazio após limpeza');
       }
 
-      console.log('Clean content length:', cleanContent.length);
-      console.log('Clean content preview:', cleanContent.substring(0, 200));
-
       // Content
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
@@ -163,33 +199,15 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       const fileName = `${assunto.replace(/[^a-zA-Z0-9\s]/g, '_').replace(/\s+/g, '_')}.pdf`;
       setDownloadStatus('Preparando download...');
 
-      // Create download link and force download
       const pdfBlob = pdf.output('blob');
-      const downloadUrl = URL.createObjectURL(pdfBlob);
       
-      // Create download link element
-      const downloadLink = document.createElement('a');
-      downloadLink.href = downloadUrl;
-      downloadLink.download = fileName;
-      downloadLink.target = '_blank';
-      downloadLink.style.display = 'none';
-      
-      // Add to DOM, click, and remove
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      
-      // Clean up URL after delay
-      setTimeout(() => {
-        URL.revokeObjectURL(downloadUrl);
-      }, 1000);
-      
-      setDownloadStatus('Download iniciado! Redirecionando...');
-      
-      // Open external link to force user out of app
-      setTimeout(() => {
-        window.open('about:blank', '_blank');
-      }, 1500);
+      if (isMobile) {
+        downloadPDFMobile(pdfBlob, fileName);
+        setDownloadStatus('Download iniciado!');
+      } else {
+        downloadPDFDesktop(pdfBlob, fileName);
+        setDownloadStatus('Download concluído!');
+      }
       
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
@@ -215,7 +233,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
           </button>
           
           <div className="flex flex-col items-end gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               <FavoriteButton 
                 assuntoId={assuntoId} 
                 isFavorited={isItemFavorited}
@@ -227,19 +245,13 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
               <button 
                 onClick={handleExportClick} 
                 disabled={isGeneratingPDF} 
-                className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-all duration-300 border border-netflix-gray disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transform"
+                className="p-2 rounded-full text-gray-400 hover:text-netflix-lightGray hover:bg-netflix-gray/20 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isGeneratingPDF ? 'Gerando PDF...' : 'Baixar PDF'}
               >
                 {isGeneratingPDF ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm font-medium">Gerando PDF...</span>
-                  </>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <Download className="h-4 w-4" />
-                    <ExternalLink className="h-4 w-4" />
-                    <span className="text-sm font-medium">Baixar PDF</span>
-                  </>
+                  <Download className="h-4 w-4" />
                 )}
               </button>
             </div>

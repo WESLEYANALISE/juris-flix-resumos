@@ -48,18 +48,13 @@ const CopyButton: React.FC<CopyButtonProps> = ({ text, assunto }) => {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-2 px-4 py-2 bg-netflix-darkGray hover:bg-netflix-gray text-netflix-lightGray rounded-lg transition-colors border border-netflix-gray"
+      className="p-2 rounded-full text-gray-400 hover:text-netflix-lightGray hover:bg-netflix-gray/20 transition-colors duration-200"
+      title={copied ? 'Texto copiado!' : 'Copiar texto'}
     >
       {copied ? (
-        <>
-          <Check className="h-4 w-4 text-green-500" />
-          <span className="text-sm font-medium">Copiado!</span>
-        </>
+        <Check className="h-4 w-4 text-green-500" />
       ) : (
-        <>
-          <Copy className="h-4 w-4" />
-          <span className="text-sm font-medium">Copiar Texto</span>
-        </>
+        <Copy className="h-4 w-4" />
       )}
     </button>
   );
