@@ -100,9 +100,16 @@ export const useResumos = () => {
 
   const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+
       const { error } = await supabase
         .from('resumos_favoritos')
         .insert({
+          user_id: user.id,
           area,
           modulo,
           tema,
@@ -119,9 +126,16 @@ export const useResumos = () => {
 
   const removeFromFavorites = async (assuntoId: number) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+
       const { error } = await supabase
         .from('resumos_favoritos')
         .delete()
+        .eq('user_id', user.id)
         .eq('assunto_id', assuntoId);
 
       if (error) throw error;
@@ -133,10 +147,17 @@ export const useResumos = () => {
 
   const addToRecents = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+
       // First try to update existing entry
       const { data: existing } = await supabase
         .from('resumos_recentes')
         .select('id')
+        .eq('user_id', user.id)
         .eq('assunto_id', assuntoId)
         .single();
 
@@ -153,6 +174,7 @@ export const useResumos = () => {
         const { error } = await supabase
           .from('resumos_recentes')
           .insert({
+            user_id: user.id,
             area,
             modulo,
             tema,
