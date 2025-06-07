@@ -22,7 +22,7 @@ const TemaCard: React.FC<TemaCardProps> = ({
     return BookOpen; // Default icon
   };
   const TemaIcon = getTemaIcon(tema);
-  return <button onClick={onClick} className="w-full p-5 bg-netflix-darkGray border border-netflix-gray rounded-lg hover:border-netflix-red hover:bg-netflix-gray transition-all duration-300 text-left group py-[12px] px-[16px]">
+  return <button onClick={onClick} className="w-full p-5 bg-netflix-darkGray border border-netflix-gray rounded-lg hover:border-netflix-red hover:bg-netflix-gray transition-all duration-300 text-left group px-[16px] py-[5px]">
       <div className="flex items-center justify-between px-0 py-[15px]">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-netflix-red/10 rounded-md group-hover:bg-netflix-red/20 transition-colors">
