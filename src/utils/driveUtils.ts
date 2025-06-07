@@ -12,7 +12,7 @@ export const uploadPDFToDrive = async (pdfBlob: Blob, fileName: string): Promise
     const formData = new FormData();
     formData.append('file', pdfBlob, fileName);
     formData.append('name', fileName);
-    formData.append('parents', ['temp_folder_id']); // Pasta temporária
+    formData.append('parents', 'temp_folder_id'); // Corrigido: passa string diretamente
 
     // Simular resposta da API do Google Drive
     // const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
