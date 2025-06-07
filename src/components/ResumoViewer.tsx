@@ -1,134 +1,171 @@
 
-import React from 'react';
-import { X, Heart, HeartOff, Download, Share2 } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, User } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
+import FloatingControls from './FloatingControls';
+import FavoriteButton from './FavoriteButton';
 import CopyButton from './CopyButton';
-import { useResumos } from '@/hooks/useResumos';
+import { useResumos } from '../hooks/useResumos';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ResumoViewerProps {
-  isOpen: boolean;
-  onClose: () => void;
   area: string;
   modulo: string;
   tema: string;
   assunto: string;
-  assuntoId: number;
-  texto: string;
+  resumo: string;
   glossario: string;
   exemplo?: string;
+  assuntoId: number;
+  onBack: () => void;
 }
 
 const ResumoViewer: React.FC<ResumoViewerProps> = ({
-  isOpen,
-  onClose,
   area,
   modulo,
   tema,
   assunto,
-  assuntoId,
-  texto,
+  resumo,
   glossario,
-  exemplo
+  exemplo = '',
+  assuntoId,
+  onBack
 }) => {
-  const { addToFavorites, removeFromFavorites, addToRecents, isFavorite, isAuthenticated } = useResumos();
-  const favorited = isFavorite(assuntoId);
+  const [fontSize, setFontSize] = useState(16);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  const {
+    addToRecents,
+    addToFavorites,
+    removeFromFavorites,
+    isFavorite
+  } = useResumos();
+  
+  const isItemFavorited = isFavorite(assuntoId);
 
-  React.useEffect(() => {
-    if (isOpen && isAuthenticated) {
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
       addToRecents(area, modulo, tema, assunto, assuntoId);
     }
-  }, [isOpen, isAuthenticated, area, modulo, tema, assunto, assuntoId, addToRecents]);
+  }, [assuntoId, addToRecents, area, modulo, tema, assunto, isAuthenticated]);
 
-  const handleToggleFavorite = () => {
-    if (!isAuthenticated) return;
-    
-    if (favorited) {
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollButton(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleFavoriteToggle = () => {
+    if (!isAuthenticated) {
+      alert('Você precisa estar logado para favoritar resumos.');
+      return;
+    }
+
+    if (isItemFavorited) {
       removeFromFavorites(assuntoId);
     } else {
       addToFavorites(area, modulo, tema, assunto, assuntoId);
     }
   };
 
-  if (!isOpen) return null;
+  const handleAuthRedirect = () => {
+    window.location.href = '/auth';
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-netflix-darkGray border border-netflix-gray rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+    <div className="min-h-screen bg-netflix-black animate-fade-in">
+      <div className="container mx-auto py-6 max-w-5xl px-0">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-netflix-gray">
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white mb-2">{assunto}</h2>
-            <p className="text-gray-400 text-sm">
-              {area} • {modulo} • {tema}
-            </p>
-          </div>
+        <div className="flex items-center justify-between mb-8 animate-slide-in-top px-[14px]">
+          <button 
+            onClick={onBack} 
+            className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-all duration-300 hover:scale-105 transform"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-medium">Voltar</span>
+          </button>
           
-          <div className="flex items-center gap-3">
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleToggleFavorite}
-                className="text-gray-400 hover:text-netflix-red"
+          <div className="flex items-center gap-1">
+            {isAuthenticated ? (
+              <FavoriteButton 
+                assuntoId={assuntoId} 
+                isFavorited={isItemFavorited} 
+                onToggle={handleFavoriteToggle} 
+              />
+            ) : (
+              <button
+                onClick={handleAuthRedirect}
+                className="p-3 rounded-full text-gray-400 hover:text-netflix-lightGray hover:bg-netflix-gray/20 transition-colors duration-200"
+                title="Faça login para favoritar"
               >
-                {favorited ? (
-                  <HeartOff className="h-5 w-5" />
-                ) : (
-                  <Heart className="h-5 w-5" />
-                )}
-              </Button>
+                <User className="h-5 w-5" />
+              </button>
             )}
             
-            <CopyButton 
-              text={`${texto}\n\n${glossario}${exemplo ? `\n\n${exemplo}` : ''}`}
-              className="text-sm"
-            />
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="text-gray-400 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <CopyButton text={resumo} assunto={assunto} />
           </div>
         </div>
+
+        {/* Breadcrumb */}
+        <div className="mb-6 animate-slide-in-left">
+          <nav className="text-sm text-gray-400 py-0 px-[14px]">
+            <span className="break-words">{area}</span>
+            <span className="mx-2">›</span>
+            <span className="break-words">{modulo}</span>
+            <span className="mx-2">›</span>
+            <span className="break-words">{tema}</span>
+            <span className="mx-2">›</span>
+            <span className="text-netflix-lightGray break-words">{assunto}</span>
+          </nav>
+        </div>
+
+        {/* Title */}
+        <h1 className="text-xl md:text-2xl font-bold text-netflix-lightGray mb-8 animate-slide-in-up px-[14px] break-words">
+          {assunto}
+        </h1>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          <div className="space-y-6">
-            {/* Texto Principal */}
-            <div>
-              <h3 className="text-lg font-medium text-white mb-3">Resumo</h3>
-              <div className="bg-netflix-black/30 p-4 rounded-lg">
-                <MarkdownRenderer content={texto} fontSize="text-sm" />
-              </div>
-            </div>
-
-            {/* Glossário */}
-            {glossario && (
-              <div>
-                <h3 className="text-lg font-medium text-white mb-3">Glossário</h3>
-                <div className="bg-netflix-black/30 p-4 rounded-lg">
-                  <MarkdownRenderer content={glossario} fontSize="text-sm" />
-                </div>
-              </div>
-            )}
-
-            {/* Exemplo */}
-            {exemplo && (
-              <div>
-                <h3 className="text-lg font-medium text-white mb-3">Exemplo</h3>
-                <div className="bg-netflix-black/30 p-4 rounded-lg">
-                  <MarkdownRenderer content={exemplo} fontSize="text-sm" />
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-4 md:p-8 animate-fade-in-up transition-all duration-500 hover:shadow-2xl hover:shadow-netflix-red/10 mx-[14px] md:mx-0">
+          <MarkdownRenderer content={resumo} fontSize={fontSize} />
         </div>
       </div>
+
+      {/* Floating Controls with Menu */}
+      <FloatingControls 
+        fontSize={fontSize} 
+        onFontSizeChange={setFontSize} 
+        onScrollToTop={scrollToTop} 
+        showScrollButton={showScrollButton}
+        glossaryContent={glossario}
+        exampleContent={exemplo}
+      />
     </div>
   );
 };

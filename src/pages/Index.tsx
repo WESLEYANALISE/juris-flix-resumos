@@ -1,220 +1,384 @@
+import { useState } from 'react';
+import { useResumos } from '../hooks/useResumos';
+import AreaCard from '../components/AreaCard';
+import ModuloCard from '../components/ModuloCard';
+import TemaCard from '../components/TemaCard';
+import AssuntoCard from '../components/AssuntoCard';
+import ResumoViewer from '../components/ResumoViewer';
+import Navigation from '../components/Navigation';
+import FavoritesList from '../components/FavoritesList';
+import RecentsList from '../components/RecentsList';
+import SearchWithPreview from '../components/SearchWithPreview';
+import JuridicalLogo from '../components/JuridicalLogo';
 
-import React, { useState } from 'react';
-import Navigation from '@/components/Navigation';
-import AreaCard from '@/components/AreaCard';
-import ModuloCard from '@/components/ModuloCard';
-import TemaCard from '@/components/TemaCard';
-import AssuntoCard from '@/components/AssuntoCard';
-import ResumoViewer from '@/components/ResumoViewer';
-import FavoritesList from '@/components/FavoritesList';
-import RecentsList from '@/components/RecentsList';
-import SearchWithPreview from '@/components/SearchWithPreview';
-import { useResumos } from '@/hooks/useResumos';
-import { Book, Heart, Clock, Search } from 'lucide-react';
+type ViewState = {
+  type: 'areas';
+} | {
+  type: 'modulos';
+  area: string;
+} | {
+  type: 'temas';
+  area: string;
+  numeroModulo: string;
+  nomeModulo: string;
+} | {
+  type: 'assuntos';
+  area: string;
+  numeroModulo: string;
+  nomeModulo: string;
+  numeroTema: string;
+  nomeTema: string;
+} | {
+  type: 'resumo';
+  area: string;
+  numeroModulo: string;
+  nomeModulo: string;
+  numeroTema: string;
+  nomeTema: string;
+  assunto: string;
+  resumo: string;
+  glossario: string;
+  exemplo: string;
+  assuntoId: number;
+};
+
+type ActiveTab = 'home' | 'favorites' | 'recent';
 
 const Index = () => {
+  const [viewState, setViewState] = useState<ViewState>({
+    type: 'areas'
+  });
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [searchTerm, setSearchTerm] = useState('');
+
   const {
-    getAreas,
-    getModulosByArea,
-    getTemasByModulo,
-    getAssuntosByTema,
     loading,
     error,
     favorites,
     recents,
-    isAuthenticated
+    isAuthenticated,
+    getAreas,
+    getModulosByArea,
+    getTemasByModulo,
+    getAssuntosByTema,
+    addToFavorites,
+    removeFromFavorites,
+    isFavorite
   } = useResumos();
 
-  const [currentView, setCurrentView] = useState<'areas' | 'modulos' | 'temas' | 'assuntos' | 'favorites' | 'recents' | 'search'>('areas');
-  const [selectedArea, setSelectedArea] = useState<string>('');
-  const [selectedModulo, setSelectedModulo] = useState<string>('');
-  const [selectedTema, setSelectedTema] = useState<string>('');
-  const [viewerData, setViewerData] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-netflix-red mx-auto mb-4"></div>
+          <p className="text-netflix-lightGray">Carregando resumos...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleAreaClick = (area: string) => {
-    setSelectedArea(area);
-    setCurrentView('modulos');
-  };
+  if (error) {
+    return (
+      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-netflix-red mb-4">Erro ao carregar dados</p>
+          <p className="text-gray-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleModuloClick = (numeroModulo: string) => {
-    setSelectedModulo(numeroModulo);
-    setCurrentView('temas');
-  };
-
-  const handleTemaClick = (numeroTema: string) => {
-    setSelectedTema(numeroTema);
-    setCurrentView('assuntos');
-  };
-
-  const handleAssuntoClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    const assuntos = getAssuntosByTema(selectedArea, selectedModulo, selectedTema);
+  const handleSubjectClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    const assuntos = getAssuntosByTema(area, modulo.split('-')[0], tema.split('-')[0]);
     const assuntoData = assuntos.find(a => a.id === assuntoId);
     
     if (assuntoData) {
-      setViewerData({
+      setViewState({
+        type: 'resumo',
         area,
-        modulo,
-        tema,
-        assunto,
-        assuntoId,
-        texto: assuntoData.texto,
+        numeroModulo: modulo.split('-')[0],
+        nomeModulo: modulo.split('-').slice(1).join('-'),
+        numeroTema: tema.split('-')[0],
+        nomeTema: tema.split('-').slice(1).join('-'),
+        assunto: assuntoData.titulo,
+        resumo: assuntoData.texto,
         glossario: assuntoData.glossario,
-        exemplo: assuntoData.exemplo
+        exemplo: assuntoData.exemplo || '',
+        assuntoId: assuntoData.id
+      });
+      setActiveTab('home');
+    }
+  };
+
+  const handleSearchResultClick = (result: any) => {
+    const { path } = result;
+    
+    if (path.assunto) {
+      const assuntos = getAssuntosByTema(path.area, path.modulo.split('-')[0], path.tema.split('-')[0]);
+      const assuntoData = assuntos.find(a => a.titulo === path.assunto);
+      
+      if (assuntoData) {
+        setViewState({
+          type: 'resumo',
+          area: path.area,
+          numeroModulo: path.modulo.split('-')[0],
+          nomeModulo: path.modulo.split('-').slice(1).join('-'),
+          numeroTema: path.tema.split('-')[0],
+          nomeTema: path.tema.split('-').slice(1).join('-'),
+          assunto: assuntoData.titulo,
+          resumo: assuntoData.texto,
+          glossario: assuntoData.glossario,
+          exemplo: assuntoData.exemplo || '',
+          assuntoId: assuntoData.id
+        });
+      }
+    } else if (path.tema) {
+      setViewState({
+        type: 'assuntos',
+        area: path.area,
+        numeroModulo: path.modulo.split('-')[0],
+        nomeModulo: path.modulo.split('-').slice(1).join('-'),
+        numeroTema: path.tema.split('-')[0],
+        nomeTema: path.tema.split('-').slice(1).join('-')
+      });
+    } else if (path.modulo) {
+      setViewState({
+        type: 'temas',
+        area: path.area,
+        numeroModulo: path.modulo.split('-')[0],
+        nomeModulo: path.modulo.split('-').slice(1).join('-')
+      });
+    } else {
+      setViewState({
+        type: 'modulos',
+        area: path.area
       });
     }
+    
+    setActiveTab('home');
+    setSearchTerm('');
   };
 
-  const handleSubjectClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    handleAssuntoClick(area, modulo, tema, assunto, assuntoId);
-  };
+  const handleToggleFavorite = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    if (!isAuthenticated) {
+      alert('Você precisa estar logado para favoritar resumos.');
+      return;
+    }
 
-  const handleBack = () => {
-    if (currentView === 'modulos') {
-      setCurrentView('areas');
-      setSelectedArea('');
-    } else if (currentView === 'temas') {
-      setCurrentView('modulos');
-      setSelectedModulo('');
-    } else if (currentView === 'assuntos') {
-      setCurrentView('temas');
-      setSelectedTema('');
-    } else if (currentView === 'favorites' || currentView === 'recents' || currentView === 'search') {
-      setCurrentView('areas');
+    if (isFavorite(assuntoId)) {
+      removeFromFavorites(assuntoId);
+    } else {
+      addToFavorites(area, modulo, tema, assunto, assuntoId);
     }
   };
 
-  const getTitle = () => {
-    switch (currentView) {
-      case 'areas': return 'Resumos Jurídicos';
-      case 'modulos': return selectedArea;
-      case 'temas': return `${selectedArea} - Módulos`;
-      case 'assuntos': return `${selectedArea} - Temas`;
-      case 'favorites': return 'Favoritos';
-      case 'recents': return 'Recentes';
-      case 'search': return 'Buscar';
-      default: return 'Resumos Jurídicos';
-    }
-  };
+  const showHeader = viewState.type === 'areas' && activeTab === 'home';
+  const showNavigation = viewState.type !== 'resumo';
 
   const renderContent = () => {
-    if (loading) {
+    if (activeTab === 'favorites') {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-netflix-red border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-netflix-lightGray">Carregando resumos...</p>
-          </div>
-        </div>
+        <FavoritesList 
+          favorites={favorites} 
+          onSubjectClick={handleSubjectClick}
+          isAuthenticated={isAuthenticated}
+        />
       );
     }
 
-    if (error) {
+    if (activeTab === 'recent') {
       return (
-        <div className="text-center py-12">
-          <p className="text-red-400 mb-4">Erro ao carregar dados: {error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-netflix-red text-white rounded-lg hover:bg-netflix-darkRed transition-colors"
-          >
-            Tentar novamente
-          </button>
-        </div>
+        <RecentsList 
+          recents={recents} 
+          onSubjectClick={handleSubjectClick}
+          isAuthenticated={isAuthenticated}
+        />
       );
     }
 
-    switch (currentView) {
+    switch (viewState.type) {
       case 'areas':
-        const areas = getAreas();
+        const areas = getAreas().filter(({ area }) => 
+          area && area.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {areas.map(({ area, resumosCount }) => (
-              <AreaCard
-                key={area}
-                area={area}
-                resumosCount={resumosCount}
-                onClick={() => handleAreaClick(area)}
-              />
-            ))}
+          <div className="space-y-6">
+            <div className="text-center py-8">
+              <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
+                Resumos Jurídicos
+              </h1>
+              <p className="text-gray-400">
+                Selecione uma área do direito para começar
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {areas.map(({ area, resumosCount }) => (
+                <AreaCard 
+                  key={area} 
+                  area={area} 
+                  resumosCount={resumosCount} 
+                  onClick={() => setViewState({ type: 'modulos', area })} 
+                />
+              ))}
+            </div>
           </div>
         );
 
       case 'modulos':
-        const modulos = getModulosByArea(selectedArea);
+        const modulos = getModulosByArea(viewState.area).filter(({ nome }) => 
+          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {modulos.map((modulo) => (
-              <ModuloCard
-                key={`${modulo.numero}-${modulo.nome}`}
-                numero={modulo.numero}
-                nome={modulo.nome}
-                temasCount={modulo.temasCount}
-                assuntosCount={modulo.assuntosCount}
-                onClick={() => handleModuloClick(modulo.numero)}
-              />
-            ))}
+          <div className="space-y-6">
+            <button 
+              onClick={() => setViewState({ type: 'areas' })} 
+              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
+            >
+              ← Voltar para áreas
+            </button>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-netflix-lightGray break-words">{viewState.area}</h2>
+              <p className="text-gray-400">Selecione um módulo para continuar</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {modulos.map(({ numero, nome, temasCount, assuntosCount }) => (
+                <ModuloCard 
+                  key={`${numero}-${nome}`} 
+                  numero={numero} 
+                  nome={nome} 
+                  temasCount={temasCount}
+                  assuntosCount={assuntosCount}
+                  onClick={() => setViewState({
+                    type: 'temas',
+                    area: viewState.area,
+                    numeroModulo: numero,
+                    nomeModulo: nome
+                  })} 
+                />
+              ))}
+            </div>
           </div>
         );
 
       case 'temas':
-        const temas = getTemasByModulo(selectedArea, selectedModulo);
+        const temas = getTemasByModulo(viewState.area, viewState.numeroModulo).filter(({ nome }) => 
+          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {temas.map((tema) => (
-              <TemaCard
-                key={`${tema.numero}-${tema.nome}`}
-                tema={tema.nome}
-                assuntosCount={tema.assuntosCount}
-                onClick={() => handleTemaClick(tema.numero)}
-              />
-            ))}
+          <div className="space-y-6">
+            <button 
+              onClick={() => setViewState({
+                type: 'modulos',
+                area: viewState.area
+              })} 
+              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
+            >
+              ← Voltar para módulos
+            </button>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-netflix-lightGray break-words">{viewState.nomeModulo}</h2>
+              <p className="text-gray-400 break-words">{viewState.area}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {temas.map(({ numero, nome, assuntosCount }) => (
+                <TemaCard 
+                  key={`${numero}-${nome}`} 
+                  tema={nome} 
+                  assuntosCount={assuntosCount} 
+                  onClick={() => setViewState({
+                    type: 'assuntos',
+                    area: viewState.area,
+                    numeroModulo: viewState.numeroModulo,
+                    nomeModulo: viewState.nomeModulo,
+                    numeroTema: numero,
+                    nomeTema: nome
+                  })} 
+                />
+              ))}
+            </div>
           </div>
         );
 
       case 'assuntos':
-        const assuntos = getAssuntosByTema(selectedArea, selectedModulo, selectedTema);
+        const assuntos = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).filter(({ titulo }) => 
+          titulo && titulo.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {assuntos.map((assunto) => (
-              <AssuntoCard
-                key={assunto.id}
-                assunto={assunto.titulo}
-                assuntoId={assunto.id}
-                area={selectedArea}
-                modulo={selectedModulo}
-                tema={selectedTema}
-                isFavorited={false}
-                onToggleFavorite={() => {}}
-                onClick={() => handleAssuntoClick(selectedArea, selectedModulo, selectedTema, assunto.titulo, assunto.id)}
-              />
-            ))}
+          <div className="space-y-6">
+            <button 
+              onClick={() => setViewState({
+                type: 'temas',
+                area: viewState.area,
+                numeroModulo: viewState.numeroModulo,
+                nomeModulo: viewState.nomeModulo
+              })} 
+              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
+            >
+              ← Voltar para temas
+            </button>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-netflix-lightGray break-words">{viewState.nomeTema}</h2>
+              <p className="text-gray-400 break-words">{viewState.area} › {viewState.nomeModulo}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {assuntos.map(({ id, titulo }) => (
+                <AssuntoCard 
+                  key={id} 
+                  assunto={titulo} 
+                  assuntoId={id} 
+                  area={viewState.area} 
+                  modulo={viewState.nomeModulo} 
+                  tema={viewState.nomeTema} 
+                  isFavorited={isFavorite(id)} 
+                  onToggleFavorite={() => handleToggleFavorite(viewState.area, viewState.nomeModulo, viewState.nomeTema, titulo, id)} 
+                  onClick={() => {
+                    const assuntoData = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).find(a => a.id === id);
+                    if (assuntoData) {
+                      setViewState({
+                        type: 'resumo',
+                        area: viewState.area,
+                        numeroModulo: viewState.numeroModulo,
+                        nomeModulo: viewState.nomeModulo,
+                        numeroTema: viewState.numeroTema,
+                        nomeTema: viewState.nomeTema,
+                        assunto: assuntoData.titulo,
+                        resumo: assuntoData.texto,
+                        glossario: assuntoData.glossario,
+                        exemplo: assuntoData.exemplo || '',
+                        assuntoId: assuntoData.id
+                      });
+                    }
+                  }} 
+                />
+              ))}
+            </div>
           </div>
         );
 
-      case 'favorites':
+      case 'resumo':
         return (
-          <FavoritesList
-            favorites={favorites}
-            onSubjectClick={handleSubjectClick}
-            isAuthenticated={isAuthenticated}
-          />
-        );
-
-      case 'recents':
-        return (
-          <RecentsList
-            recents={recents}
-            onSubjectClick={handleSubjectClick}
-            isAuthenticated={isAuthenticated}
-          />
-        );
-
-      case 'search':
-        return (
-          <SearchWithPreview 
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onResultClick={handleSubjectClick}
+          <ResumoViewer 
+            area={viewState.area} 
+            modulo={viewState.nomeModulo} 
+            tema={viewState.nomeTema} 
+            assunto={viewState.assunto} 
+            resumo={viewState.resumo} 
+            glossario={viewState.glossario}
+            exemplo={viewState.exemplo}
+            assuntoId={viewState.assuntoId} 
+            onBack={() => setViewState({
+              type: 'assuntos',
+              area: viewState.area,
+              numeroModulo: viewState.numeroModulo,
+              nomeModulo: viewState.nomeModulo,
+              numeroTema: viewState.numeroTema,
+              nomeTema: viewState.nomeTema
+            })} 
           />
         );
 
@@ -225,80 +389,32 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-netflix-black">
-      <Navigation 
-        title={getTitle()} 
-        onBack={handleBack}
-        showBackButton={currentView !== 'areas'}
-        isAuthenticated={isAuthenticated}
-      />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 justify-center sm:justify-start">
-          <button
-            onClick={() => setCurrentView('areas')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              currentView === 'areas'
-                ? 'bg-netflix-red text-white'
-                : 'bg-netflix-gray text-netflix-lightGray hover:bg-netflix-gray/80'
-            }`}
-          >
-            <Book className="h-4 w-4" />
-            Resumos
-          </button>
-          
-          <button
-            onClick={() => setCurrentView('search')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              currentView === 'search'
-                ? 'bg-netflix-red text-white'
-                : 'bg-netflix-gray text-netflix-lightGray hover:bg-netflix-gray/80'
-            }`}
-          >
-            <Search className="h-4 w-4" />
-            Buscar
-          </button>
-
-          {isAuthenticated && (
-            <>
-              <button
-                onClick={() => setCurrentView('favorites')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'favorites'
-                    ? 'bg-netflix-red text-white'
-                    : 'bg-netflix-gray text-netflix-lightGray hover:bg-netflix-gray/80'
-                }`}
-              >
-                <Heart className="h-4 w-4" />
-                Favoritos ({favorites.length})
-              </button>
-              
-              <button
-                onClick={() => setCurrentView('recents')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'recents'
-                    ? 'bg-netflix-red text-white'
-                    : 'bg-netflix-gray text-netflix-lightGray hover:bg-netflix-gray/80'
-                }`}
-              >
-                <Clock className="h-4 w-4" />
-                Recentes ({recents.length})
-              </button>
-            </>
+      {showNavigation && (
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {showHeader && (
+            <header className="mb-8">
+              <JuridicalLogo />
+            </header>
           )}
+
+          <Navigation 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+
+          {activeTab === 'home' && (
+            <SearchWithPreview 
+              searchTerm={searchTerm} 
+              onSearchChange={setSearchTerm} 
+              onResultClick={handleSearchResultClick} 
+            />
+          )}
+
+          <main>{renderContent()}</main>
         </div>
-
-        {renderContent()}
-      </main>
-
-      {/* Resume Viewer Modal */}
-      {viewerData && (
-        <ResumoViewer
-          isOpen={!!viewerData}
-          onClose={() => setViewerData(null)}
-          {...viewerData}
-        />
       )}
+
+      {viewState.type === 'resumo' && renderContent()}
     </div>
   );
 };
