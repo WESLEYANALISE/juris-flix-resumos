@@ -16,30 +16,14 @@ const CopyButton: React.FC<CopyButtonProps> = ({
 
   const removeMarkdown = (text: string): string => {
     return text
-      // Remove headers
       .replace(/#{1,6}\s+/g, '')
-      // Remove bold/italic
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
-      .replace(/__(.*?)__/g, '$1')
-      .replace(/_(.*?)_/g, '$1')
-      // Remove inline code
       .replace(/`(.*?)`/g, '$1')
-      // Remove blockquotes
       .replace(/>\s+/g, '')
-      // Remove list markers
-      .replace(/^[-*+]\s+/gm, '• ')
+      .replace(/^[-*+]\s+/gm, '')
       .replace(/^\d+\.\s+/gm, '')
-      // Remove links
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      // Remove horizontal rules
-      .replace(/^---+$/gm, '')
-      // Remove code blocks
-      .replace(/```[\s\S]*?```/g, '')
-      // Clean up multiple line breaks
-      .replace(/\n\s*\n\s*\n/g, '\n\n')
-      // Clean up extra spaces
-      .replace(/[ \t]+/g, ' ')
+      .replace(/\n\s*\n/g, '\n\n')
       .trim();
   };
 

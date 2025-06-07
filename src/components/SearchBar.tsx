@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 interface SearchBarProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  onResultClick?: (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => void;
 }
 
 const SearchBar = ({ searchTerm, onSearchChange }: SearchBarProps) => {

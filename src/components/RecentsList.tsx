@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, ExternalLink, User } from 'lucide-react';
+import { Clock, ExternalLink } from 'lucide-react';
 
 interface RecentItem {
   id: string;
@@ -15,26 +15,9 @@ interface RecentItem {
 interface RecentsListProps {
   recents: RecentItem[];
   onSubjectClick: (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => void;
-  isAuthenticated?: boolean;
 }
 
-const RecentsList: React.FC<RecentsListProps> = ({ recents, onSubjectClick, isAuthenticated = false }) => {
-  if (!isAuthenticated) {
-    return (
-      <div className="text-center py-12 animate-fade-in">
-        <User className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-netflix-lightGray mb-4">Recentes</h2>
-        <p className="text-gray-400 mb-4">Você precisa estar logado para ver seus recentes.</p>
-        <button
-          onClick={() => window.location.href = '/auth'}
-          className="bg-netflix-red hover:bg-netflix-darkRed text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          Fazer Login
-        </button>
-      </div>
-    );
-  }
-
+const RecentsList: React.FC<RecentsListProps> = ({ recents, onSubjectClick }) => {
   if (recents.length === 0) {
     return (
       <div className="text-center py-12 animate-fade-in">
@@ -75,13 +58,13 @@ const RecentsList: React.FC<RecentsListProps> = ({ recents, onSubjectClick, isAu
               <ExternalLink className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             
-            <h3 className="text-lg font-semibold text-netflix-lightGray mb-2 line-clamp-2 break-words">
+            <h3 className="text-lg font-semibold text-netflix-lightGray mb-2 line-clamp-2">
               {recent.assunto}
             </h3>
             
             <div className="text-sm text-gray-400 space-y-1">
-              <p className="break-words">{recent.area}</p>
-              <p className="text-xs break-words">{recent.modulo} › {recent.tema}</p>
+              <p>{recent.area}</p>
+              <p className="text-xs">{recent.modulo} › {recent.tema}</p>
             </div>
             
             <div className="mt-4 text-xs text-gray-500">

@@ -31,13 +31,13 @@ const AssuntoCard: React.FC<AssuntoCardProps> = ({
 
   return (
     <div className="w-full p-4 bg-netflix-darkGray border border-netflix-gray rounded-lg hover:border-netflix-red hover:bg-netflix-gray transition-all duration-300 group">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <button
           onClick={onClick}
-          className="flex items-start gap-3 flex-1 text-left min-w-0"
+          className="flex items-center gap-3 flex-1 text-left"
         >
-          <FileText className="h-5 w-5 text-netflix-red flex-shrink-0 mt-0.5" />
-          <span className="text-netflix-lightGray group-hover:text-white font-medium text-sm leading-5 break-words overflow-wrap-anywhere">
+          <FileText className="h-5 w-5 text-netflix-red flex-shrink-0" />
+          <span className="text-netflix-lightGray group-hover:text-white font-medium text-sm">
             {assunto}
           </span>
         </button>
