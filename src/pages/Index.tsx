@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
@@ -115,6 +116,7 @@ const Index = () => {
           assunto: assuntoData.titulo,
           resumo: assuntoData.texto,
           glossario: assuntoData.glossario,
+          exemplo: assuntoData.exemplo || '',
           assuntoId: assuntoData.id
         });
       }
@@ -165,50 +167,74 @@ const Index = () => {
         );
         
         return (
-          <div className="space-y-8">
-            <div className="text-center space-y-6 animate-fade-in">
-              <div className="relative">
-                <h1 className="font-bold text-netflix-lightGray text-4xl mb-3 bg-gradient-to-r from-netflix-lightGray to-white bg-clip-text text-transparent">
-                  Resumos Jurídicos Pro
-                </h1>
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-netflix-red rounded-full animate-pulse"></div>
-              </div>
-              
-              <p className="text-gray-400 max-w-3xl mx-auto text-lg leading-relaxed">
-                Acesse resumos completos e organizados por área do direito. 
-                Estude de forma eficiente com conteúdo profissional e exemplos práticos.
-              </p>
-              
-              <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-netflix-red rounded-full"></div>
-                  <span>Conteúdo Atualizado</span>
+          <div className="space-y-12">
+            {/* Hero Section */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-netflix-darkGray via-netflix-gray to-netflix-darkGray p-12 text-center shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-netflix-red/10 via-transparent to-blue-500/10"></div>
+              <div className="relative z-10 space-y-8">
+                <div className="inline-flex items-center gap-3 rounded-full bg-netflix-red/20 px-6 py-2 text-sm font-medium text-netflix-red backdrop-blur-sm">
+                  <div className="h-2 w-2 rounded-full bg-netflix-red animate-pulse"></div>
+                  Plataforma Profissional
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Exemplos Práticos</span>
+                
+                <div className="space-y-6">
+                  <h1 className="bg-gradient-to-r from-white via-netflix-lightGray to-gray-300 bg-clip-text text-5xl font-black text-transparent md:text-6xl">
+                    Resumos Jurídicos
+                    <span className="block bg-gradient-to-r from-netflix-red to-red-400 bg-clip-text text-transparent">
+                      Profissionais
+                    </span>
+                  </h1>
+                  
+                  <p className="mx-auto max-w-3xl text-lg leading-relaxed text-gray-300">
+                    Acesse mais de <span className="font-bold text-netflix-red">{areas.reduce((total, { resumosCount }) => total + resumosCount, 0)}</span> resumos 
+                    organizados em <span className="font-bold text-blue-400">{areas.length}</span> áreas do direito. 
+                    Estude com eficiência e conquiste seus objetivos.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>Glossário Completo</span>
+                
+                <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
+                  <div className="flex items-center gap-3 rounded-lg bg-black/30 px-4 py-2 backdrop-blur-sm">
+                    <div className="h-3 w-3 rounded-full bg-green-500 shadow-lg shadow-green-500/50"></div>
+                    <span className="font-medium text-green-400">Conteúdo Atualizado</span>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg bg-black/30 px-4 py-2 backdrop-blur-sm">
+                    <div className="h-3 w-3 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50"></div>
+                    <span className="font-medium text-blue-400">Exemplos Práticos</span>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg bg-black/30 px-4 py-2 backdrop-blur-sm">
+                    <div className="h-3 w-3 rounded-full bg-purple-500 shadow-lg shadow-purple-500/50"></div>
+                    <span className="font-medium text-purple-400">Glossário Completo</span>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
-              {areas.map(({ area, resumosCount }, index) => (
-                <div 
-                  key={area} 
-                  className="animate-fade-in-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <AreaCard 
-                    area={area} 
-                    resumosCount={resumosCount} 
-                    onClick={() => setViewState({ type: 'modulos', area })} 
-                  />
+
+            {/* Areas Grid */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-netflix-lightGray">
+                  Áreas do Direito
+                </h2>
+                <div className="text-sm text-gray-400">
+                  {areas.length} áreas disponíveis
                 </div>
-              ))}
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {areas.map(({ area, resumosCount }, index) => (
+                  <div 
+                    key={area} 
+                    className="group animate-fade-in-up"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <AreaCard 
+                      area={area} 
+                      resumosCount={resumosCount} 
+                      onClick={() => setViewState({ type: 'modulos', area })} 
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         );
@@ -314,6 +340,7 @@ const Index = () => {
                   assunto: assuntoData.titulo,
                   resumo: assuntoData.texto,
                   glossario: assuntoData.glossario,
+                  exemplo: assuntoData.exemplo || '',
                   assuntoId: assuntoData.id
                 });
               }
