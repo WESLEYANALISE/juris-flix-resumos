@@ -4910,6 +4910,7 @@ export type Database = {
       RESUMOS_pro: {
         Row: {
           area: string | null
+          exemplo: string | null
           glossario: string | null
           id: number
           nome_do_modulo: string | null
@@ -4922,6 +4923,7 @@ export type Database = {
         }
         Insert: {
           area?: string | null
+          exemplo?: string | null
           glossario?: string | null
           id?: number
           nome_do_modulo?: string | null
@@ -4934,6 +4936,7 @@ export type Database = {
         }
         Update: {
           area?: string | null
+          exemplo?: string | null
           glossario?: string | null
           id?: number
           nome_do_modulo?: string | null

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,6 +12,7 @@ interface ResumoData {
   titulo_do_assunto: string;
   texto: string;
   glossario: string;
+  exemplo?: string;
 }
 
 interface FavoriteItem {
@@ -53,7 +53,7 @@ export const useResumos = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('RESUMOS_pro')
-        .select('*')
+        .select('*, exemplo')
         .order('area', { ascending: true })
         .order('numero_do_modulo', { ascending: true })
         .order('numero_do_tema', { ascending: true })
@@ -220,16 +220,19 @@ export const useResumos = () => {
           modulosMap.set(moduloKey, {
             numero: resumo.numero_do_modulo,
             nome: resumo.nome_do_modulo,
-            temas: new Set()
+            temas: new Set(),
+            assuntos: new Set()
           });
         }
         modulosMap.get(moduloKey).temas.add(`${resumo.numero_do_tema}-${resumo.nome_do_tema}`);
+        modulosMap.get(moduloKey).assuntos.add(resumo.id);
       });
 
     return Array.from(modulosMap.entries()).map(([key, modulo]) => ({
       numero: modulo.numero,
       nome: modulo.nome,
-      temasCount: modulo.temas.size
+      temasCount: modulo.temas.size,
+      assuntosCount: modulo.assuntos.size
     }));
   };
 
@@ -268,7 +271,8 @@ export const useResumos = () => {
         numero: resumo.numero_do_assunto,
         titulo: resumo.titulo_do_assunto,
         texto: resumo.texto,
-        glossario: resumo.glossario
+        glossario: resumo.glossario,
+        exemplo: resumo.exemplo || ''
       }));
   };
 

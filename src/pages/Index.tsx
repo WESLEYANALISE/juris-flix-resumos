@@ -10,6 +10,7 @@ import FavoritesList from '../components/FavoritesList';
 import RecentsList from '../components/RecentsList';
 import SearchWithPreview from '../components/SearchWithPreview';
 import JuridicalLogo from '../components/JuridicalLogo';
+
 type ViewState = {
   type: 'areas';
 } | {
@@ -37,6 +38,7 @@ type ViewState = {
   assunto: string;
   resumo: string;
   glossario: string;
+  exemplo: string;
   assuntoId: number;
 };
 type ActiveTab = 'home' | 'favorites' | 'recent';
@@ -89,6 +91,7 @@ const Index = () => {
         assunto: assuntoData.titulo,
         resumo: assuntoData.texto,
         glossario: assuntoData.glossario,
+        exemplo: assuntoData.exemplo || '',
         assuntoId: assuntoData.id
       });
       setActiveTab('home');
@@ -157,38 +160,70 @@ const Index = () => {
     }
     switch (viewState.type) {
       case 'areas':
-        const areas = getAreas().filter(({
-          area
-        }) => area && area.toLowerCase().includes(searchTerm.toLowerCase()));
-        return <div className="space-y-8">
-            <div className="text-center space-y-4">
-              <h1 className="font-bold text-netflix-lightGray text-3xl">
-                Resumos Jurídicos Pro
-              </h1>
-              <p className="text-gray-400 max-w-2xl mx-auto text-base">
+        const areas = getAreas().filter(({ area }) => 
+          area && area.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
+        return (
+          <div className="space-y-8">
+            <div className="text-center space-y-6 animate-fade-in">
+              <div className="relative">
+                <h1 className="font-bold text-netflix-lightGray text-4xl mb-3 bg-gradient-to-r from-netflix-lightGray to-white bg-clip-text text-transparent">
+                  Resumos Jurídicos Pro
+                </h1>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-netflix-red rounded-full animate-pulse"></div>
+              </div>
+              
+              <p className="text-gray-400 max-w-3xl mx-auto text-lg leading-relaxed">
                 Acesse resumos completos e organizados por área do direito. 
-                Estude de forma eficiente com conteúdo profissional.
+                Estude de forma eficiente com conteúdo profissional e exemplos práticos.
               </p>
+              
+              <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-netflix-red rounded-full"></div>
+                  <span>Conteúdo Atualizado</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Exemplos Práticos</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Glossário Completo</span>
+                </div>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {areas.map(({
-              area,
-              resumosCount
-            }) => <AreaCard key={area} area={area} resumosCount={resumosCount} onClick={() => setViewState({
-              type: 'modulos',
-              area
-            })} />)}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
+              {areas.map(({ area, resumosCount }, index) => (
+                <div 
+                  key={area} 
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <AreaCard 
+                    area={area} 
+                    resumosCount={resumosCount} 
+                    onClick={() => setViewState({ type: 'modulos', area })} 
+                  />
+                </div>
+              ))}
             </div>
-          </div>;
+          </div>
+        );
+
       case 'modulos':
-        const modulos = getModulosByArea(viewState.area).filter(({
-          nome
-        }) => nome && nome.toLowerCase().includes(searchTerm.toLowerCase()));
-        return <div className="space-y-6">
-            <button onClick={() => setViewState({
-            type: 'areas'
-          })} className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium">
+        const modulos = getModulosByArea(viewState.area).filter(({ nome }) => 
+          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
+        return (
+          <div className="space-y-6">
+            <button 
+              onClick={() => setViewState({ type: 'areas' })} 
+              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
+            >
               ← Voltar para áreas
             </button>
             <div className="space-y-2">
@@ -196,18 +231,25 @@ const Index = () => {
               <p className="text-gray-400">Selecione um módulo para continuar</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {modulos.map(({
-              numero,
-              nome,
-              temasCount
-            }) => <ModuloCard key={`${numero}-${nome}`} numero={numero} nome={nome} temasCount={temasCount} onClick={() => setViewState({
-              type: 'temas',
-              area: viewState.area,
-              numeroModulo: numero,
-              nomeModulo: nome
-            })} />)}
+              {modulos.map(({ numero, nome, temasCount, assuntosCount }) => (
+                <ModuloCard 
+                  key={`${numero}-${nome}`} 
+                  numero={numero} 
+                  nome={nome} 
+                  temasCount={temasCount}
+                  assuntosCount={assuntosCount}
+                  onClick={() => setViewState({
+                    type: 'temas',
+                    area: viewState.area,
+                    numeroModulo: numero,
+                    nomeModulo: nome
+                  })} 
+                />
+              ))}
             </div>
-          </div>;
+          </div>
+        );
+
       case 'temas':
         const temas = getTemasByModulo(viewState.area, viewState.numeroModulo).filter(({
           nome
@@ -279,32 +321,57 @@ const Index = () => {
             </div>
           </div>;
       case 'resumo':
-        return <ResumoViewer area={viewState.area} modulo={viewState.nomeModulo} tema={viewState.nomeTema} assunto={viewState.assunto} resumo={viewState.resumo} glossario={viewState.glossario} assuntoId={viewState.assuntoId} onBack={() => setViewState({
-          type: 'assuntos',
-          area: viewState.area,
-          numeroModulo: viewState.numeroModulo,
-          nomeModulo: viewState.nomeModulo,
-          numeroTema: viewState.numeroTema,
-          nomeTema: viewState.nomeTema
-        })} />;
+        return (
+          <ResumoViewer 
+            area={viewState.area} 
+            modulo={viewState.nomeModulo} 
+            tema={viewState.nomeTema} 
+            assunto={viewState.assunto} 
+            resumo={viewState.resumo} 
+            glossario={viewState.glossario}
+            exemplo={viewState.exemplo}
+            assuntoId={viewState.assuntoId} 
+            onBack={() => setViewState({
+              type: 'assuntos',
+              area: viewState.area,
+              numeroModulo: viewState.numeroModulo,
+              nomeModulo: viewState.nomeModulo,
+              numeroTema: viewState.numeroTema,
+              nomeTema: viewState.nomeTema
+            })} 
+          />
+        );
       default:
         return null;
     }
   };
-  return <div className="min-h-screen bg-netflix-black">
-      {showNavigation && <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {showHeader && <header className="mb-8">
+  return (
+    <div className="min-h-screen bg-netflix-black">
+      {showNavigation && (
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {showHeader && (
+            <header className="mb-8">
               <JuridicalLogo />
-            </header>}
+            </header>
+          )}
 
           <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {activeTab === 'home' && <SearchWithPreview searchTerm={searchTerm} onSearchChange={setSearchTerm} onResultClick={handleSearchResultClick} />}
+          {activeTab === 'home' && (
+            <SearchWithPreview 
+              searchTerm={searchTerm} 
+              onSearchChange={setSearchTerm} 
+              onResultClick={handleSearchResultClick} 
+            />
+          )}
 
           <main>{renderContent()}</main>
-        </div>}
+        </div>
+      )}
 
       {viewState.type === 'resumo' && renderContent()}
-    </div>;
+    </div>
+  );
 };
+
 export default Index;

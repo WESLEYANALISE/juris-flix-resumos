@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, Loader2, ExternalLink } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
-import FloatingGlossary from './FloatingGlossary';
 import FavoriteButton from './FavoriteButton';
 import CopyButton from './CopyButton';
 import AuthDialog from './AuthDialog';
@@ -18,6 +18,7 @@ interface ResumoViewerProps {
   assunto: string;
   resumo: string;
   glossario: string;
+  exemplo?: string;
   assuntoId: number;
   onBack: () => void;
 }
@@ -29,6 +30,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   assunto,
   resumo,
   glossario,
+  exemplo = '',
   assuntoId,
   onBack
 }) => {
@@ -249,13 +251,14 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         </div>
       </div>
 
-      {/* Floating Controls with Glossary */}
+      {/* Floating Controls with Menu */}
       <FloatingControls 
         fontSize={fontSize} 
         onFontSizeChange={setFontSize} 
         onScrollToTop={scrollToTop} 
         showScrollButton={showScrollButton}
         glossaryContent={glossario}
+        exampleContent={exemplo}
       />
 
       {/* Auth Dialog */}
