@@ -1,20 +1,15 @@
-
 import React from 'react';
 import { Scale, Gavel, BookOpen, TrendingUp, Users, Award } from 'lucide-react';
 import { useResumos } from '../hooks/useResumos';
-
 const JuridicalLogo: React.FC = () => {
   const {
     resumos,
     getAreas
   } = useResumos();
-  
   const areas = getAreas();
   const totalResumos = resumos.length;
   const totalAreas = areas.length;
-
-  return (
-    <div className="flex items-center gap-3">
+  return <div className="flex items-center gap-3 px-[79px]">
       <div className="flex items-center gap-2">
         <Scale className="h-8 w-8 text-netflix-red" />
         <div className="flex flex-col">
@@ -25,8 +20,6 @@ const JuridicalLogo: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default JuridicalLogo;
