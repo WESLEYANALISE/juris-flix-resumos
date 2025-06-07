@@ -1,14 +1,25 @@
+
 import React from 'react';
 import { ChevronRight, Scale, Gavel, BookOpen, FileText, Calculator, Shield, Users, Building } from 'lucide-react';
+
 interface TemaCardProps {
   tema: string;
   assuntosCount: number;
   onClick: () => void;
+  sequenceNumber?: number;
+  totalCount?: number;
+  area?: string;
+  modulo?: string;
 }
+
 const TemaCard: React.FC<TemaCardProps> = ({
   tema,
   assuntosCount,
-  onClick
+  onClick,
+  sequenceNumber,
+  totalCount,
+  area = '',
+  modulo = ''
 }) => {
   const getTemaIcon = (temaNome: string) => {
     const lowerTema = temaNome.toLowerCase();
@@ -21,24 +32,78 @@ const TemaCard: React.FC<TemaCardProps> = ({
     if (lowerTema.includes('empresa') || lowerTema.includes('comercial')) return Building;
     return BookOpen;
   };
+
+  // Generate color based on area and module
+  const getCardColor = (area: string, modulo: string, tema: string) => {
+    const combinedText = area + modulo + tema;
+    const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    
+    const colors = [
+      'bg-emerald-500/20 border-emerald-500/40 hover:border-emerald-400',
+      'bg-violet-500/20 border-violet-500/40 hover:border-violet-400',
+      'bg-amber-500/20 border-amber-500/40 hover:border-amber-400',
+      'bg-rose-500/20 border-rose-500/40 hover:border-rose-400',
+      'bg-sky-500/20 border-sky-500/40 hover:border-sky-400',
+      'bg-lime-500/20 border-lime-500/40 hover:border-lime-400',
+      'bg-fuchsia-500/20 border-fuchsia-500/40 hover:border-fuchsia-400',
+      'bg-slate-500/20 border-slate-500/40 hover:border-slate-400',
+    ];
+    
+    return colors[hash % colors.length];
+  };
+
+  const getIconColor = (area: string, modulo: string, tema: string) => {
+    const combinedText = area + modulo + tema;
+    const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    
+    const colors = [
+      'text-emerald-400',
+      'text-violet-400',
+      'text-amber-400',
+      'text-rose-400',
+      'text-sky-400',
+      'text-lime-400',
+      'text-fuchsia-400',
+      'text-slate-400',
+    ];
+    
+    return colors[hash % colors.length];
+  };
+
   const TemaIcon = getTemaIcon(tema);
-  return <button onClick={onClick} className="w-full p-5 bg-netflix-darkGray border border-netflix-gray hover:border-netflix-red hover:bg-netflix-gray transition-all duration-300 text-left group px-[16px] py-[5px] rounded-xl">
+  const cardColorClass = getCardColor(area, modulo, tema);
+  const iconColorClass = getIconColor(area, modulo, tema);
+
+  return (
+    <button 
+      onClick={onClick} 
+      className={`w-full p-5 border transition-all duration-300 text-left group px-[16px] py-[5px] rounded-xl ${cardColorClass}`}
+    >
       <div className="flex items-center justify-between px-0 py-[15px]">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-netflix-red/10 rounded-md group-hover:bg-netflix-red/20 transition-colors">
-            <TemaIcon className="h-5 w-5 text-netflix-red" />
+        <div className="flex items-center gap-3 flex-1">
+          <div className="p-2 bg-black/10 rounded-md group-hover:bg-black/20 transition-colors">
+            <TemaIcon className={`h-5 w-5 ${iconColorClass}`} />
           </div>
-          <div>
+          <div className="flex-1">
             <h4 className="text-base font-medium text-netflix-lightGray mb-1 group-hover:text-white">
               {tema}
             </h4>
-            <p className="text-gray-400 text-sm">
-              {assuntosCount} assunto{assuntosCount !== 1 ? 's' : ''}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-gray-400 text-sm">
+                {assuntosCount} assunto{assuntosCount !== 1 ? 's' : ''}
+              </p>
+              {sequenceNumber && totalCount && (
+                <span className="text-xs text-gray-500">
+                  • {sequenceNumber}/{totalCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-netflix-red transition-colors" />
+        <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
       </div>
-    </button>;
+    </button>
+  );
 };
+
 export default TemaCard;
