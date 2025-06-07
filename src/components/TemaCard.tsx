@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { ChevronRight, Scale, Gavel, BookOpen, FileText, Calculator, Shield, Users, Building } from 'lucide-react';
-
 interface TemaCardProps {
   tema: string;
   assuntosCount: number;
   onClick: () => void;
 }
-
 const TemaCard: React.FC<TemaCardProps> = ({
   tema,
   assuntosCount,
@@ -24,14 +21,8 @@ const TemaCard: React.FC<TemaCardProps> = ({
     if (lowerTema.includes('empresa') || lowerTema.includes('comercial')) return Building;
     return BookOpen;
   };
-
   const TemaIcon = getTemaIcon(tema);
-
-  return (
-    <button 
-      onClick={onClick} 
-      className="w-full p-5 bg-netflix-darkGray border border-netflix-gray rounded-lg hover:border-netflix-red hover:bg-netflix-gray transition-all duration-300 text-left group px-[16px] py-[5px]"
-    >
+  return <button onClick={onClick} className="w-full p-5 bg-netflix-darkGray border border-netflix-gray hover:border-netflix-red hover:bg-netflix-gray transition-all duration-300 text-left group px-[16px] py-[5px] rounded-xl">
       <div className="flex items-center justify-between px-0 py-[15px]">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-netflix-red/10 rounded-md group-hover:bg-netflix-red/20 transition-colors">
@@ -48,8 +39,6 @@ const TemaCard: React.FC<TemaCardProps> = ({
         </div>
         <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-netflix-red transition-colors" />
       </div>
-    </button>
-  );
+    </button>;
 };
-
 export default TemaCard;
