@@ -63,7 +63,8 @@ const Index = () => {
     getAssuntosByTema,
     addToFavorites,
     removeFromFavorites,
-    isFavorite
+    isFavorite,
+    resumos
   } = useResumos();
 
   if (loading) {
@@ -89,22 +90,23 @@ const Index = () => {
   }
 
   const handleSubjectClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    const assuntos = getAssuntosByTema(area, modulo.split('-')[0], tema.split('-')[0]);
-    const assuntoData = assuntos.find(a => a.id === assuntoId);
+    // Buscar os dados do assunto diretamente pelo ID
+    const allAssuntos = resumos.filter(r => r.id === assuntoId);
+    const assuntoData = allAssuntos[0];
     
     if (assuntoData) {
       setViewState({
         type: 'resumo',
-        area,
-        numeroModulo: modulo.split('-')[0],
-        nomeModulo: modulo.split('-').slice(1).join('-'),
-        numeroTema: tema.split('-')[0],
-        nomeTema: tema.split('-').slice(1).join('-'),
-        assunto: assuntoData.titulo,
+        area: assuntoData.area,
+        numeroModulo: assuntoData.numero_do_modulo,
+        nomeModulo: assuntoData.nome_do_modulo,
+        numeroTema: assuntoData.numero_do_tema,
+        nomeTema: assuntoData.nome_do_tema,
+        assunto: assuntoData.titulo_do_assunto,
         resumo: assuntoData.texto,
         glossario: assuntoData.glossario,
         exemplo: assuntoData.exemplo || '',
-        mapaMental: assuntoData.mapaMental || '',
+        mapaMental: assuntoData.mapa_mental || '',
         assuntoId: assuntoData.id
       });
       setActiveTab('home');
