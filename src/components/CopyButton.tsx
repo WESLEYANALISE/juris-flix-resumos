@@ -40,41 +40,76 @@ const CopyButton: React.FC<CopyButtonProps> = ({
       const cleanText = removeMarkdown(text);
       const formattedText = `${assunto}\n\n${cleanText}`;
       
-      // Try different copy methods for iframe/mobile compatibility
-      if (isInIframe || isMobile) {
-        // For iframe/mobile, use fallback methods
-        if (navigator.clipboard && window.isSecureContext) {
+      // Múltiplas tentativas para garantir que funcione em iframe/mobile
+      let copySuccess = false;
+      
+      // Método 1: Clipboard API moderno
+      if (navigator.clipboard && window.isSecureContext && !isInIframe) {
+        try {
           await navigator.clipboard.writeText(formattedText);
-        } else {
-          // Fallback for iframe/mobile
-          const textArea = document.createElement('textarea');
-          textArea.value = formattedText;
-          textArea.style.position = 'fixed';
-          textArea.style.left = '-999999px';
-          textArea.style.top = '-999999px';
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          
-          try {
-            document.execCommand('copy');
-          } catch (err) {
-            console.error('Fallback copy failed:', err);
-            throw err;
-          } finally {
-            document.body.removeChild(textArea);
-          }
+          copySuccess = true;
+        } catch (err) {
+          console.log('Clipboard API falhou, tentando método alternativo');
         }
-      } else {
-        await navigator.clipboard.writeText(formattedText);
       }
       
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Método 2: Fallback para iframe e mobile
+      if (!copySuccess) {
+        const textArea = document.createElement('textarea');
+        textArea.value = formattedText;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        textArea.style.opacity = '0';
+        textArea.style.pointerEvents = 'none';
+        textArea.setAttribute('readonly', '');
+        textArea.setAttribute('contenteditable', 'true');
+        
+        document.body.appendChild(textArea);
+        
+        try {
+          // Para iOS Safari
+          if (navigator.userAgent.match(/ipad|iphone/i)) {
+            const range = document.createRange();
+            range.selectNodeContents(textArea);
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+            textArea.setSelectionRange(0, 999999);
+          } else {
+            textArea.select();
+            textArea.setSelectionRange(0, 999999);
+          }
+          
+          copySuccess = document.execCommand('copy');
+        } catch (err) {
+          console.error('Método execCommand falhou:', err);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+      
+      // Método 3: Tentativa final com seleção manual
+      if (!copySuccess && navigator.clipboard) {
+        try {
+          await navigator.clipboard.writeText(formattedText);
+          copySuccess = true;
+        } catch (err) {
+          console.error('Terceira tentativa falhou:', err);
+        }
+      }
+      
+      if (copySuccess) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        throw new Error('Falha em todos os métodos de cópia');
+      }
+      
     } catch (error) {
       console.error('Erro ao copiar texto:', error);
-      // Show user-friendly error
-      alert('Não foi possível copiar o texto. Tente selecionar e copiar manualmente.');
+      // Mostrar mensagem mais amigável
+      alert('Não foi possível copiar automaticamente. Tente selecionar o texto manualmente.');
     } finally {
       setIsAnimating(false);
     }
@@ -84,13 +119,15 @@ const CopyButton: React.FC<CopyButtonProps> = ({
     <button 
       onClick={handleCopy}
       onTouchStart={handleCopy}
-      title={copied ? 'Texto copiado!' : 'Copiar texto'} 
+      title={copied ? 'Texto copiado!' : 'Copiar resumo'} 
       className={`
-        p-2 rounded-full transition-all duration-200 
-        hover:bg-netflix-gray/20 transform active:scale-95
-        touch-manipulation select-none
+        p-3 rounded-lg transition-all duration-200 
+        transform active:scale-95 touch-manipulation select-none
         ${isAnimating ? 'animate-pulse scale-110' : 'hover:scale-105'}
-        ${copied ? 'text-green-500' : 'text-gray-400 hover:text-netflix-lightGray'}
+        ${copied 
+          ? 'text-green-400 bg-green-500/20 border border-green-500/30' 
+          : 'text-netflix-lightGray bg-netflix-red/10 hover:bg-netflix-red/20 border border-netflix-red/30 hover:border-netflix-red/50'
+        }
       `}
       style={{ 
         WebkitTapHighlightColor: 'transparent',
@@ -98,13 +135,18 @@ const CopyButton: React.FC<CopyButtonProps> = ({
         WebkitUserSelect: 'none',
         userSelect: 'none'
       }}
-      aria-label={copied ? 'Texto copiado!' : 'Copiar texto'}
+      aria-label={copied ? 'Texto copiado!' : 'Copiar resumo'}
     >
-      {copied ? (
-        <Check className={`h-4 w-4 ${isAnimating ? 'animate-bounce' : ''}`} />
-      ) : (
-        <Copy className={`h-4 w-4 ${isAnimating ? 'animate-pulse' : ''}`} />
-      )}
+      <div className="flex items-center gap-2">
+        {copied ? (
+          <Check className={`h-4 w-4 ${isAnimating ? 'animate-bounce' : ''}`} />
+        ) : (
+          <Copy className={`h-4 w-4 ${isAnimating ? 'animate-pulse' : ''}`} />
+        )}
+        <span className="text-sm font-medium">
+          {copied ? 'Copiado!' : 'Copiar'}
+        </span>
+      </div>
     </button>
   );
 };

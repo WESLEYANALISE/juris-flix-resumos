@@ -19,7 +19,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Prevent double-tap zoom on mobile
+    // Prevenir zoom duplo no mobile
     if ('touches' in e) {
       e.preventDefault();
     }
@@ -29,26 +29,27 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     try {
       await onToggle?.();
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('Erro ao favoritar:', error);
     }
     
     setTimeout(() => setIsAnimating(false), 300);
   };
 
-  // Detect if we're in an iframe
+  // Detectar se estamos em iframe ou mobile
   const isInIframe = window !== window.parent;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   return (
     <button
       onClick={handleInteraction}
       onTouchStart={handleInteraction}
       className={`
-        p-3 rounded-full transition-all duration-300 
-        hover:bg-netflix-gray/30 transform active:scale-95 
-        touch-manipulation select-none
+        p-3 rounded-lg transition-all duration-300 
+        transform active:scale-95 touch-manipulation select-none
+        hover:bg-netflix-gray/30 
         ${isAnimating ? 'animate-pulse scale-110' : 'hover:scale-110'}
         ${isFavorited ? 'text-netflix-red' : 'text-gray-400 hover:text-netflix-red'}
-        ${isInIframe ? 'cursor-pointer' : ''}
+        ${isInIframe || isMobile ? 'cursor-pointer' : ''}
       `}
       title={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       style={{ 

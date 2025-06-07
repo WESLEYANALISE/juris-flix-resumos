@@ -4913,6 +4913,7 @@ export type Database = {
           exemplo: string | null
           glossario: string | null
           id: number
+          mapa_mental: string | null
           nome_do_modulo: string | null
           nome_do_tema: string | null
           numero_do_assunto: string | null
@@ -4926,6 +4927,7 @@ export type Database = {
           exemplo?: string | null
           glossario?: string | null
           id?: number
+          mapa_mental?: string | null
           nome_do_modulo?: string | null
           nome_do_tema?: string | null
           numero_do_assunto?: string | null
@@ -4939,6 +4941,7 @@ export type Database = {
           exemplo?: string | null
           glossario?: string | null
           id?: number
+          mapa_mental?: string | null
           nome_do_modulo?: string | null
           nome_do_tema?: string | null
           numero_do_assunto?: string | null
@@ -6606,6 +6609,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_recents: {
+        Row: {
+          accessed_at: string
+          area: string
+          assunto: string
+          assunto_id: number
+          id: string
+          modulo: string
+          tema: string
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          area: string
+          assunto: string
+          assunto_id: number
+          id?: string
+          modulo: string
+          tema: string
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          area?: string
+          assunto?: string
+          assunto_id?: number
+          id?: string
+          modulo?: string
+          tema?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_scores: {
         Row: {
           area: string | null
@@ -7150,6 +7186,16 @@ export type Database = {
       }
       track_book_view: {
         Args: { p_book_id: number } | { p_livro_id: string }
+        Returns: undefined
+      }
+      update_user_recent: {
+        Args: {
+          p_area: string
+          p_modulo: string
+          p_tema: string
+          p_assunto: string
+          p_assunto_id: number
+        }
         Returns: undefined
       }
     }

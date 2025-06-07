@@ -10,6 +10,7 @@ interface FloatingControlsProps {
   showScrollButton: boolean;
   glossaryContent?: string;
   exampleContent?: string;
+  mapaMentalContent?: string;
 }
 
 const FloatingControls: React.FC<FloatingControlsProps> = ({
@@ -18,7 +19,8 @@ const FloatingControls: React.FC<FloatingControlsProps> = ({
   onScrollToTop,
   showScrollButton,
   glossaryContent = '',
-  exampleContent = ''
+  exampleContent = '',
+  mapaMentalContent = ''
 }) => {
   const [showFontControls, setShowFontControls] = useState(false);
 
@@ -33,6 +35,7 @@ const FloatingControls: React.FC<FloatingControlsProps> = ({
       <FloatingMenuButton 
         glossaryContent={glossaryContent} 
         exampleContent={exampleContent}
+        mapaMentalContent={mapaMentalContent}
       />
 
       {/* Font Control */}
