@@ -13,22 +13,26 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   isFavorited = false,
   onToggle
 }) => {
-  const handleToggle = () => {
+  const handleToggle = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     onToggle?.();
   };
 
   return (
     <button
       onClick={handleToggle}
-      className={`p-2 rounded-full transition-all duration-300 hover:bg-netflix-gray/30 transform hover:scale-110 ${
+      onTouchEnd={handleToggle}
+      className={`p-3 rounded-full transition-all duration-300 hover:bg-netflix-gray/30 transform hover:scale-110 active:scale-95 touch-manipulation ${
         isFavorited 
           ? 'text-netflix-red' 
           : 'text-gray-400 hover:text-netflix-red'
       }`}
       title={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <Heart 
-        className={`h-4 w-4 transition-all duration-300 ${isFavorited ? 'fill-current scale-110' : ''}`} 
+        className={`h-5 w-5 transition-all duration-300 ${isFavorited ? 'fill-current scale-110' : ''}`} 
       />
     </button>
   );

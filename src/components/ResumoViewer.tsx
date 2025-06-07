@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, ExternalLink } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FloatingControls from './FloatingControls';
 import FloatingGlossary from './FloatingGlossary';
@@ -8,7 +8,7 @@ import CopyButton from './CopyButton';
 import AuthDialog from './AuthDialog';
 import { useResumos } from '../hooks/useResumos';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { createTemporaryDriveLink } from '../utils/driveUtils';
+import { downloadPDF, createDownloadLink } from '../utils/driveUtils';
 import jsPDF from 'jspdf';
 
 interface ResumoViewerProps {
@@ -36,6 +36,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<string>('');
+  const [downloadLink, setDownloadLink] = useState<string>('');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const isMobile = useIsMobile();
   
@@ -95,6 +96,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     try {
       setIsGeneratingPDF(true);
       setDownloadStatus('Gerando PDF...');
+      setDownloadLink('');
       
       const pdf = new jsPDF();
       const margin = 20;
@@ -140,21 +142,18 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       const fileName = `${assunto.replace(/[^a-zA-Z0-9\s]/g, '_').replace(/\s+/g, '_')}.pdf`;
       const pdfBlob = pdf.output('blob');
       
-      setDownloadStatus('Criando link temporário...');
+      setDownloadStatus('Criando link de download...');
       
-      // Criar link temporário (simulando Google Drive)
-      const tempLink = createTemporaryDriveLink(pdfBlob);
-      
-      setDownloadStatus('Abrindo no navegador...');
-      
-      // Abrir em nova aba/janela
-      const newWindow = window.open(tempLink, '_blank');
-      if (!newWindow) {
-        // Fallback se popup foi bloqueado
-        window.location.href = tempLink;
+      if (isMobile) {
+        // No mobile, criar link de download direto
+        const downloadUrl = createDownloadLink(pdfBlob, fileName);
+        setDownloadLink(downloadUrl);
+        setDownloadStatus('Link de download criado!');
+      } else {
+        // No desktop, fazer download automático
+        downloadPDF(pdfBlob, fileName);
+        setDownloadStatus('Download iniciado!');
       }
-      
-      setDownloadStatus('PDF aberto com sucesso!');
       
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
@@ -162,7 +161,10 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setIsGeneratingPDF(false);
-      setTimeout(() => setDownloadStatus(''), 3000);
+      setTimeout(() => {
+        setDownloadStatus('');
+        setDownloadLink('');
+      }, 10000);
     }
   };
 
@@ -204,9 +206,21 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
             </div>
             
             {downloadStatus && (
-              <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded animate-pulse">
-                {downloadStatus}
-              </p>
+              <div className="text-xs text-netflix-red bg-netflix-darkGray px-3 py-2 rounded animate-pulse">
+                <p>{downloadStatus}</p>
+                {downloadLink && (
+                  <a 
+                    href={downloadLink} 
+                    download={`${assunto.replace(/[^a-zA-Z0-9\s]/g, '_').replace(/\s+/g, '_')}.pdf`}
+                    className="flex items-center gap-1 mt-2 text-netflix-lightGray hover:text-white transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Clique para baixar
+                  </a>
+                )}
+              </div>
             )}
           </div>
         </div>
