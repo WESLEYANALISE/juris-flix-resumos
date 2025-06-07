@@ -23,7 +23,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       if (line.startsWith('## ')) {
         return <h2 key={key} style={{
           fontSize: `${fontSize * 1.4}px`
-        }} className="text-xl font-semibold text-netflix-lightGray mb-4 mt-6 my-[17px]">
+        }} className="text-xl font-semibold text-netflix-lightGray mb-4 mt-6 my-[12px]">
             {line.replace('## ', '')}
           </h2>;
       }
