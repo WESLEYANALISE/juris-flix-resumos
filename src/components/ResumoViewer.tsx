@@ -196,7 +196,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   return <div className="min-h-screen bg-netflix-black animate-fade-in">
       <div className="container mx-auto py-6 max-w-5xl px-0">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 animate-slide-in-top">
+        <div className="flex items-center justify-between mb-8 animate-slide-in-top px-[14px]">
           <button onClick={onBack} className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-all duration-300 hover:scale-105 transform">
             <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Voltar</span>
@@ -221,7 +221,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
 
         {/* Breadcrumb */}
         <div className="mb-6 animate-slide-in-left">
-          <nav className="text-sm text-gray-400">
+          <nav className="text-sm text-gray-400 py-0 px-[14px]">
             <span>{area}</span>
             <span className="mx-2">›</span>
             <span>{modulo}</span>
@@ -233,12 +233,12 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-netflix-lightGray mb-8 animate-slide-in-up">
+        <h1 className="text-2xl font-bold text-netflix-lightGray mb-8 animate-slide-in-up px-[14px]">
           {assunto}
         </h1>
 
         {/* Content */}
-        <div className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-8 px-[22px] animate-fade-in-up transition-all duration-500 hover:shadow-2xl hover:shadow-netflix-red/10">
+        <div className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-8 px-[22px] animate-fade-in-up transition-all duration-500 hover:shadow-2xl hover:shadow-netflix-red/10 py-[15px]">
           <MarkdownRenderer content={resumo} fontSize={fontSize} />
         </div>
       </div>

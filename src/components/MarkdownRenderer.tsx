@@ -21,11 +21,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           </h3>;
       }
       if (line.startsWith('## ')) {
-        return <h2 key={key} className="text-xl font-bold text-netflix-lightGray mb-2 mt-3" style={{
-          fontSize: `${fontSize * 1.4}px`
-        }}>
-            {line.replace('## ', '')}
-          </h2>;
+        return;
       }
       if (line.startsWith('# ')) {
         return;
