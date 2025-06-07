@@ -14,6 +14,9 @@ const TemaCard: React.FC<TemaCardProps> = ({
   onClick
 }) => {
   const getTemaIcon = (temaNome: string) => {
+    // Add null check to prevent error
+    if (!temaNome) return BookOpen;
+    
     const lowerTema = temaNome.toLowerCase();
     if (lowerTema.includes('personalidade') || lowerTema.includes('pessoa')) return Users;
     if (lowerTema.includes('crimes') || lowerTema.includes('penal')) return Gavel;
@@ -39,7 +42,7 @@ const TemaCard: React.FC<TemaCardProps> = ({
           </div>
           <div>
             <h4 className="text-base font-medium text-netflix-lightGray mb-1 group-hover:text-white">
-              {tema}
+              {tema || 'Tema não definido'}
             </h4>
             <p className="text-gray-400 text-sm">
               {assuntosCount} assunto{assuntosCount !== 1 ? 's' : ''}

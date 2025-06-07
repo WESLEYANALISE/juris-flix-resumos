@@ -162,8 +162,7 @@ const Index = () => {
             {temas.map((tema) => (
               <TemaCard
                 key={`${tema.numero}-${tema.nome}`}
-                numero={tema.numero}
-                nome={tema.nome}
+                tema={tema.nome}
                 assuntosCount={tema.assuntosCount}
                 onClick={() => handleTemaClick(tema.numero)}
               />
@@ -210,7 +209,7 @@ const Index = () => {
         );
 
       case 'search':
-        return <SearchWithPreview onSubjectClick={handleSubjectClick} />;
+        return <SearchWithPreview />;
 
       default:
         return null;

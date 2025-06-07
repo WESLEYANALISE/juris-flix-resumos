@@ -1,8 +1,8 @@
 
-import React, { useEffect } from 'react';
-import { X, Heart, Clock } from 'lucide-react';
+import React from 'react';
+import { X, Heart, HeartOff, Download, Share2 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import MarkdownRenderer from './MarkdownRenderer';
-import FavoriteButton from './FavoriteButton';
 import CopyButton from './CopyButton';
 import { useResumos } from '@/hooks/useResumos';
 
@@ -31,76 +31,88 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   glossario,
   exemplo
 }) => {
-  const { addToRecents, addToFavorites, removeFromFavorites, isFavorite, isAuthenticated } = useResumos();
+  const { addToFavorites, removeFromFavorites, addToRecents, isFavorite, isAuthenticated } = useResumos();
+  const favorited = isFavorite(assuntoId);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen && isAuthenticated) {
       addToRecents(area, modulo, tema, assunto, assuntoId);
     }
-  }, [isOpen, area, modulo, tema, assunto, assuntoId, addToRecents, isAuthenticated]);
+  }, [isOpen, isAuthenticated, area, modulo, tema, assunto, assuntoId, addToRecents]);
 
-  const handleToggleFavorite = async () => {
+  const handleToggleFavorite = () => {
     if (!isAuthenticated) return;
     
-    if (isFavorite(assuntoId)) {
-      await removeFromFavorites(assuntoId);
+    if (favorited) {
+      removeFromFavorites(assuntoId);
     } else {
-      await addToFavorites(area, modulo, tema, assunto, assuntoId);
+      addToFavorites(area, modulo, tema, assunto, assuntoId);
     }
   };
 
   if (!isOpen) return null;
 
-  // Combine all content for copying
-  const fullContent = `${assunto}\n\n${texto}${glossario ? `\n\nGlossário:\n${glossario}` : ''}${exemplo ? `\n\nExemplo:\n${exemplo}` : ''}`;
-
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-netflix-darkGray border border-netflix-gray rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-netflix-darkGray border border-netflix-gray rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-netflix-gray">
-          <div className="flex-1 min-w-0 mr-4">
-            <h2 className="text-lg sm:text-xl font-bold text-netflix-lightGray mb-2 break-words overflow-wrap-anywhere">
-              {assunto}
-            </h2>
-            <p className="text-sm text-gray-400 break-words">
-              {area} › {modulo} › {tema}
+        <div className="flex items-center justify-between p-6 border-b border-netflix-gray">
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-white mb-2">{assunto}</h2>
+            <p className="text-gray-400 text-sm">
+              {area} • {modulo} • {tema}
             </p>
           </div>
           
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-3">
             {isAuthenticated && (
-              <FavoriteButton
-                assuntoId={assuntoId}
-                isFavorited={isFavorite(assuntoId)}
-                onToggle={handleToggleFavorite}
-              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleFavorite}
+                className="text-gray-400 hover:text-netflix-red"
+              >
+                {favorited ? (
+                  <HeartOff className="h-5 w-5" />
+                ) : (
+                  <Heart className="h-5 w-5" />
+                )}
+              </Button>
             )}
-            <button
+            
+            <CopyButton 
+              text={`${texto}\n\n${glossario}${exemplo ? `\n\n${exemplo}` : ''}`}
+              className="text-sm"
+            />
+            
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-netflix-red transition-colors rounded-lg hover:bg-netflix-gray"
+              className="text-gray-400 hover:text-white"
             >
               <X className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <div className="space-y-6">
-            {/* Main content */}
-            <div className="prose prose-invert max-w-none">
-              <MarkdownRenderer content={texto} />
+            {/* Texto Principal */}
+            <div>
+              <h3 className="text-lg font-medium text-white mb-3">Resumo</h3>
+              <div className="bg-netflix-black/30 p-4 rounded-lg">
+                <MarkdownRenderer content={texto} fontSize="text-sm" />
+              </div>
             </div>
 
             {/* Glossário */}
             {glossario && (
               <div>
-                <h3 className="text-lg font-semibold text-netflix-lightGray mb-3 flex items-center gap-2">
-                  📚 Glossário
-                </h3>
-                <div className="bg-netflix-gray/50 border border-netflix-gray rounded-lg p-4">
-                  <MarkdownRenderer content={glossario} />
+                <h3 className="text-lg font-medium text-white mb-3">Glossário</h3>
+                <div className="bg-netflix-black/30 p-4 rounded-lg">
+                  <MarkdownRenderer content={glossario} fontSize="text-sm" />
                 </div>
               </div>
             )}
@@ -108,31 +120,12 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
             {/* Exemplo */}
             {exemplo && (
               <div>
-                <h3 className="text-lg font-semibold text-netflix-lightGray mb-3 flex items-center gap-2">
-                  💡 Exemplo
-                </h3>
-                <div className="bg-blue-600/20 border border-blue-600/50 rounded-lg p-4">
-                  <MarkdownRenderer content={exemplo} />
+                <h3 className="text-lg font-medium text-white mb-3">Exemplo</h3>
+                <div className="bg-netflix-black/30 p-4 rounded-lg">
+                  <MarkdownRenderer content={exemplo} fontSize="text-sm" />
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Footer with actions */}
-        <div className="p-4 sm:p-6 border-t border-netflix-gray flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
-          {!isAuthenticated && (
-            <div className="flex items-center gap-2 text-sm text-gray-400 bg-netflix-gray/50 rounded-lg p-3">
-              <Heart className="h-4 w-4" />
-              <span>Faça login para favoritar e ver recentes</span>
-            </div>
-          )}
-          
-          <div className="flex gap-3 sm:ml-auto">
-            <CopyButton 
-              text={fullContent}
-              className="flex-1 sm:flex-none justify-center"
-            />
           </div>
         </div>
       </div>
