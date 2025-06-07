@@ -203,12 +203,12 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
           </button>
           
           <div className="flex flex-col items-end gap-3">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 py-0 px-[13px]">
               <FavoriteButton assuntoId={assuntoId} isFavorited={isItemFavorited} onToggle={handleFavoriteToggle} />
               
               <CopyButton text={resumo} assunto={assunto} />
 
-              <button onClick={handleExportClick} disabled={isGeneratingPDF} className="p-2 rounded-full text-gray-400 hover:text-netflix-lightGray hover:bg-netflix-gray/20 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed" title={isGeneratingPDF ? 'Gerando PDF...' : 'Baixar PDF'}>
+              <button onClick={handleExportClick} disabled={isGeneratingPDF} title={isGeneratingPDF ? 'Gerando PDF...' : 'Baixar PDF'} className="p-2 rounded-full text-gray-400 hover:text-netflix-lightGray hover:bg-netflix-gray/20 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed py-[13px] px-[13px]">
                 {isGeneratingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               </button>
             </div>
