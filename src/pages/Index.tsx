@@ -30,6 +30,7 @@ const Index = () => {
   const [selectedModulo, setSelectedModulo] = useState<string>('');
   const [selectedTema, setSelectedTema] = useState<string>('');
   const [viewerData, setViewerData] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const handleAreaClick = (area: string) => {
     setSelectedArea(area);
@@ -209,7 +210,13 @@ const Index = () => {
         );
 
       case 'search':
-        return <SearchWithPreview />;
+        return (
+          <SearchWithPreview 
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onResultClick={handleSubjectClick}
+          />
+        );
 
       default:
         return null;
