@@ -94,7 +94,9 @@ const Auth = () => {
             Voltar ao início
           </button>
           
-          <JuridicalLogo className="h-12 mx-auto mb-6" />
+          <div className="mb-6">
+            <JuridicalLogo />
+          </div>
           
           <h1 className="text-2xl font-bold text-netflix-lightGray mb-2">
             {isLogin ? 'Entrar' : 'Criar Conta'}

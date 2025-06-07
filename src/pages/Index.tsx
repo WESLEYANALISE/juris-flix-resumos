@@ -152,7 +152,7 @@ const Index = () => {
                 <ChevronLeft className="h-5 w-5" />
               </button>
             )}
-            <JuridicalLogo className="h-8" />
+            <JuridicalLogo />
           </div>
           
           <UserMenu />
@@ -166,7 +166,6 @@ const Index = () => {
         <SearchBar 
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          onResultClick={handleSubjectClick}
         />
 
         {currentView === 'favorites' && (

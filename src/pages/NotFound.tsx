@@ -10,7 +10,9 @@ const NotFound = () => {
   return (
     <div className="min-h-screen bg-netflix-black flex items-center justify-center px-4">
       <div className="text-center max-w-md mx-auto">
-        <JuridicalLogo className="h-16 mx-auto mb-8" />
+        <div className="mb-8">
+          <JuridicalLogo />
+        </div>
         
         <h1 className="text-6xl font-bold text-netflix-red mb-4">404</h1>
         
