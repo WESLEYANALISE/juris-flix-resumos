@@ -64,7 +64,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     }
   };
   return <div className="min-h-screen bg-netflix-black animate-fade-in">
-      <div className="container mx-auto py-6 max-w-5xl px-0">
+      <div className="-bottom-0.5 -bottom-0.5 mx-auto py-0 px-[2px] rounded-3xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-slide-in-top px-[14px]">
           <button onClick={onBack} className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-all duration-300 hover:scale-105 transform">
