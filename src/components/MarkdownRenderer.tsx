@@ -64,13 +64,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
       // Empty lines
       if (line.trim() === '') {
-        return <div key={key} className="h-4" />;
+        return;
       }
 
       // Regular paragraphs
       return <p key={key} style={{
         fontSize: `${fontSize}px`
-      }} className="text-gray-300 mb-4 leading-relaxed">
+      }} className="text-gray-300 mb-4 leading-relaxed py-[9px]">
           {parseInlineMarkdown(line)}
         </p>;
     });
