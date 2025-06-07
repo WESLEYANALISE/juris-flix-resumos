@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
@@ -57,7 +56,10 @@ const Index = () => {
     getAreas,
     getModulosByArea,
     getTemasByModulo,
-    getAssuntosByTema
+    getAssuntosByTema,
+    addToFavorites,
+    removeFromFavorites,
+    isFavorite
   } = useResumos();
 
   if (loading) {
@@ -143,6 +145,14 @@ const Index = () => {
     }
     
     setActiveTab('home');
+  };
+
+  const handleToggleFavorite = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    if (isFavorite(assuntoId)) {
+      removeFromFavorites(assuntoId);
+    } else {
+      addToFavorites(area, modulo, tema, assunto, assuntoId);
+    }
   };
 
   const showHeader = viewState.type === 'areas' && activeTab === 'home';
@@ -281,7 +291,19 @@ const Index = () => {
               {assuntos.map(({ id, titulo }) => (
                 <AssuntoCard 
                   key={id} 
-                  assunto={titulo} 
+                  assunto={titulo}
+                  assuntoId={id}
+                  area={viewState.area}
+                  modulo={viewState.nomeModulo}
+                  tema={viewState.nomeTema}
+                  isFavorited={isFavorite(id)}
+                  onToggleFavorite={() => handleToggleFavorite(
+                    viewState.area,
+                    viewState.nomeModulo,
+                    viewState.nomeTema,
+                    titulo,
+                    id
+                  )}
                   onClick={() => {
                     const assuntoData = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema)
                       .find(a => a.id === id);
