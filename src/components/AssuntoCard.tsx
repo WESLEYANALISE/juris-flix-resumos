@@ -25,7 +25,7 @@ const AssuntoCard: React.FC<AssuntoCardProps> = ({
     e.stopPropagation(); // Prevent triggering the card click
     onToggleFavorite();
   };
-  return <div className="w-full p-4 border border-netflix-gray hover:border-netflix-red transition-all duration-300 group rounded-xl bg-red-950">
+  return <div className="w-full p-4 border border-netflix-gray hover:border-netflix-red transition-all duration-300 group rounded-xl bg-[#b71b29]/25">
       <div className="flex items-center justify-between gap-3">
         <button onClick={onClick} className="flex items-center gap-3 flex-1 text-left">
           <FileText className="h-5 w-5 text-netflix-red flex-shrink-0" />
