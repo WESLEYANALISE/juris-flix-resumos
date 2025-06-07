@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -8,7 +7,6 @@ import CopyButton from './CopyButton';
 import { useResumos } from '../hooks/useResumos';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useAuth } from '../hooks/useAuth';
-
 interface ResumoViewerProps {
   area: string;
   modulo: string;
@@ -21,7 +19,6 @@ interface ResumoViewerProps {
   assuntoId: number;
   onBack: () => void;
 }
-
 const ResumoViewer: React.FC<ResumoViewerProps> = ({
   area,
   modulo,
@@ -37,24 +34,22 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const [fontSize, setFontSize] = useState(16);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const isMobile = useIsMobile();
-  const { user } = useAuth();
-  
+  const {
+    user
+  } = useAuth();
   const {
     addToRecents,
     addToFavorites,
     removeFromFavorites,
     isFavorite
   } = useResumos();
-  
   const isItemFavorited = isFavorite(assuntoId);
-
   useEffect(() => {
     // Só adicionar aos recentes se o usuário estiver logado
     if (user) {
       addToRecents(area, modulo, tema, assunto, assuntoId);
     }
   }, [assuntoId, addToRecents, area, modulo, tema, assunto, user]);
-
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollButton(window.scrollY > 300);
@@ -62,14 +57,12 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   };
-
   const handleFavoriteToggle = () => {
     if (isItemFavorited) {
       removeFromFavorites(assuntoId);
@@ -77,7 +70,6 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       addToFavorites(area, modulo, tema, assunto, assuntoId);
     }
   };
-
   return <div className="min-h-screen bg-netflix-black animate-fade-in">
       <div className="-bottom-0.5 -bottom-0.5 mx-auto py-0 px-[2px] rounded-3xl">
         {/* Header */}
@@ -90,7 +82,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
           <div className="flex items-center gap-2">
             <FavoriteButton assuntoId={assuntoId} isFavorited={isItemFavorited} onToggle={handleFavoriteToggle} />
             
-            <div className="bg-netflix-red/20 border border-netflix-red rounded-lg p-1">
+            <div className="bg-netflix-red/20 border border-netflix-red p-1 px-0 py-0 my-[14px] mx-[9px] rounded-xl">
               <CopyButton text={resumo} assunto={assunto} />
             </div>
           </div>
@@ -124,5 +116,4 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       <FloatingControls fontSize={fontSize} onFontSizeChange={setFontSize} onScrollToTop={scrollToTop} showScrollButton={showScrollButton} glossaryContent={glossario} exampleContent={exemplo} mapaMentalContent={mapaMental} />
     </div>;
 };
-
 export default ResumoViewer;
