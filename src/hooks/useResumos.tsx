@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 interface ResumoData {
   id: number;
@@ -42,12 +43,20 @@ export const useResumos = () => {
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchResumos();
-    fetchFavorites();
-    fetchRecents();
-  }, []);
+    if (user) {
+      fetchFavorites();
+      fetchRecents();
+    } else {
+      // Limpar dados quando usuário não está logado
+      setFavorites([]);
+      setRecents([]);
+    }
+  }, [user]);
 
   const fetchResumos = async () => {
     try {
@@ -71,6 +80,8 @@ export const useResumos = () => {
   };
 
   const fetchFavorites = async () => {
+    if (!user) return;
+    
     try {
       const { data, error } = await supabase
         .from('resumos_favoritos')
@@ -85,6 +96,8 @@ export const useResumos = () => {
   };
 
   const fetchRecents = async () => {
+    if (!user) return;
+    
     try {
       const { data, error } = await supabase
         .from('resumos_recentes')
@@ -100,13 +113,12 @@ export const useResumos = () => {
   };
 
   const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return;
-      }
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
 
+    try {
       const { error } = await supabase
         .from('resumos_favoritos')
         .insert({
@@ -126,13 +138,12 @@ export const useResumos = () => {
   };
 
   const removeFromFavorites = async (assuntoId: number) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return;
-      }
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
 
+    try {
       const { error } = await supabase
         .from('resumos_favoritos')
         .delete()
@@ -147,13 +158,12 @@ export const useResumos = () => {
   };
 
   const addToRecents = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return;
-      }
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
 
+    try {
       // First try to update existing entry
       const { data: existing } = await supabase
         .from('resumos_recentes')

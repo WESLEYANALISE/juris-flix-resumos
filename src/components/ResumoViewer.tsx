@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -6,6 +7,8 @@ import FavoriteButton from './FavoriteButton';
 import CopyButton from './CopyButton';
 import { useResumos } from '../hooks/useResumos';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useAuth } from '../hooks/useAuth';
+
 interface ResumoViewerProps {
   area: string;
   modulo: string;
@@ -18,6 +21,7 @@ interface ResumoViewerProps {
   assuntoId: number;
   onBack: () => void;
 }
+
 const ResumoViewer: React.FC<ResumoViewerProps> = ({
   area,
   modulo,
@@ -33,16 +37,24 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const [fontSize, setFontSize] = useState(16);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  
   const {
     addToRecents,
     addToFavorites,
     removeFromFavorites,
     isFavorite
   } = useResumos();
+  
   const isItemFavorited = isFavorite(assuntoId);
+
   useEffect(() => {
-    addToRecents(area, modulo, tema, assunto, assuntoId);
-  }, [assuntoId, addToRecents, area, modulo, tema, assunto]);
+    // Só adicionar aos recentes se o usuário estiver logado
+    if (user) {
+      addToRecents(area, modulo, tema, assunto, assuntoId);
+    }
+  }, [assuntoId, addToRecents, area, modulo, tema, assunto, user]);
+
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollButton(window.scrollY > 300);
@@ -50,12 +62,14 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   };
+
   const handleFavoriteToggle = () => {
     if (isItemFavorited) {
       removeFromFavorites(assuntoId);
@@ -63,6 +77,7 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       addToFavorites(area, modulo, tema, assunto, assuntoId);
     }
   };
+
   return <div className="min-h-screen bg-netflix-black animate-fade-in">
       <div className="-bottom-0.5 -bottom-0.5 mx-auto py-0 px-[2px] rounded-3xl">
         {/* Header */}
@@ -109,4 +124,5 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       <FloatingControls fontSize={fontSize} onFontSizeChange={setFontSize} onScrollToTop={scrollToTop} showScrollButton={showScrollButton} glossaryContent={glossario} exampleContent={exemplo} mapaMentalContent={mapaMental} />
     </div>;
 };
+
 export default ResumoViewer;

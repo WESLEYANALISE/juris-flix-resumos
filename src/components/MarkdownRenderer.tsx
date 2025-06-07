@@ -14,14 +14,14 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
       // Headers
       if (line.startsWith('### ')) {
-        return <h3 key={key} className="text-lg font-semibold text-netflix-lightGray mb-3 mt-6" style={{
+        return <h3 key={key} className="text-lg font-semibold text-netflix-lightGray mb-3 mt-4" style={{
           fontSize: `${fontSize * 1.2}px`
         }}>
             {line.replace('### ', '')}
           </h3>;
       }
       if (line.startsWith('## ')) {
-        return <h2 key={key} className="text-xl font-semibold text-netflix-lightGray mb-4 mt-8" style={{
+        return <h2 key={key} className="text-xl font-semibold text-netflix-lightGray mb-4 mt-6" style={{
           fontSize: `${fontSize * 1.4}px`
         }}>
             {line.replace('## ', '')}
