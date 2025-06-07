@@ -13,7 +13,7 @@ const JuridicalLogo: React.FC = () => {
       <div className="flex items-center gap-2">
         <Scale className="h-8 w-8 text-netflix-red" />
         <div className="flex flex-col">
-          <h1 className="text-xl font-bold text-netflix-lightGray">LegalStudy</h1>
+          <h1 className="text-xl font-bold text-netflix-lightGray">ResumosPro</h1>
           <div className="flex items-center gap-4 text-xs text-gray-400">
             <span>{totalAreas} áreas</span>
             <span>{totalResumos} resumos</span>
