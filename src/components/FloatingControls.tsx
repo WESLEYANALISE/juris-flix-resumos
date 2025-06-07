@@ -1,19 +1,22 @@
 
 import React, { useState } from 'react';
 import { ArrowUp, Type } from 'lucide-react';
+import FloatingGlossary from './FloatingGlossary';
 
 interface FloatingControlsProps {
   fontSize: number;
   onFontSizeChange: (size: number) => void;
   onScrollToTop: () => void;
   showScrollButton: boolean;
+  glossaryContent?: string;
 }
 
 const FloatingControls: React.FC<FloatingControlsProps> = ({
   fontSize,
   onFontSizeChange,
   onScrollToTop,
-  showScrollButton
+  showScrollButton,
+  glossaryContent = ''
 }) => {
   const [showFontControls, setShowFontControls] = useState(false);
 
@@ -24,7 +27,12 @@ const FloatingControls: React.FC<FloatingControlsProps> = ({
 
   return (
     <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40 items-end">
-      {/* Font Control - Now with red styling */}
+      {/* Glossary Button - First in order */}
+      {glossaryContent && glossaryContent.trim() !== '' && (
+        <FloatingGlossary content={glossaryContent} />
+      )}
+
+      {/* Font Control - Red styling */}
       <div className="relative">
         <button
           onClick={() => setShowFontControls(!showFontControls)}

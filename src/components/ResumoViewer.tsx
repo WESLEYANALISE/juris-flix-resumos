@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -9,6 +8,7 @@ import CopyButton from './CopyButton';
 import AuthDialog from './AuthDialog';
 import { useResumos } from '../hooks/useResumos';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { createTemporaryDriveLink } from '../utils/driveUtils';
 import jsPDF from 'jspdf';
 
 interface ResumoViewerProps {
@@ -91,45 +91,6 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     return cleaned;
   };
 
-  const downloadPDFMobile = (pdfBlob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(pdfBlob);
-    
-    // Try to open in a new window/tab for mobile browsers
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.location.href = url;
-    } else {
-      // Fallback: create download link
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-    
-    // Clean up URL after delay
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 5000);
-  };
-
-  const downloadPDFDesktop = (pdfBlob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(pdfBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
-  };
-
   const handleAuthenticate = async (email: string, password: string) => {
     try {
       setIsGeneratingPDF(true);
@@ -157,13 +118,12 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       pdf.text(subtitleLines, margin, currentY);
       currentY += subtitleLines.length * 6 + 15;
 
-      // Content cleaning and verification
+      // Content
       const cleanContent = cleanMarkdownForPDF(resumo);
       if (!cleanContent || cleanContent.trim().length === 0) {
         throw new Error('Conteúdo vazio após limpeza');
       }
 
-      // Content
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
 
@@ -178,17 +138,23 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       }
 
       const fileName = `${assunto.replace(/[^a-zA-Z0-9\s]/g, '_').replace(/\s+/g, '_')}.pdf`;
-      setDownloadStatus('Preparando download...');
-      
       const pdfBlob = pdf.output('blob');
       
-      if (isMobile) {
-        downloadPDFMobile(pdfBlob, fileName);
-        setDownloadStatus('Abrindo no navegador...');
-      } else {
-        downloadPDFDesktop(pdfBlob, fileName);
-        setDownloadStatus('Download concluído!');
+      setDownloadStatus('Criando link temporário...');
+      
+      // Criar link temporário (simulando Google Drive)
+      const tempLink = createTemporaryDriveLink(pdfBlob);
+      
+      setDownloadStatus('Abrindo no navegador...');
+      
+      // Abrir em nova aba/janela
+      const newWindow = window.open(tempLink, '_blank');
+      if (!newWindow) {
+        // Fallback se popup foi bloqueado
+        window.location.href = tempLink;
       }
+      
+      setDownloadStatus('PDF aberto com sucesso!');
       
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
@@ -269,15 +235,13 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         </div>
       </div>
 
-      {/* Floating Glossary - positioned above controls */}
-      <FloatingGlossary content={glossario} />
-
-      {/* Floating Controls */}
+      {/* Floating Controls with Glossary */}
       <FloatingControls 
         fontSize={fontSize} 
         onFontSizeChange={setFontSize} 
         onScrollToTop={scrollToTop} 
-        showScrollButton={showScrollButton} 
+        showScrollButton={showScrollButton}
+        glossaryContent={glossario}
       />
 
       {/* Auth Dialog */}
