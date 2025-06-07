@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
@@ -40,6 +39,7 @@ type ViewState = {
   resumo: string;
   glossario: string;
   exemplo: string;
+  mapaMental: string;
   assuntoId: number;
 };
 
@@ -104,6 +104,7 @@ const Index = () => {
         resumo: assuntoData.texto,
         glossario: assuntoData.glossario,
         exemplo: assuntoData.exemplo || '',
+        mapaMental: assuntoData.mapaMental || '',
         assuntoId: assuntoData.id
       });
       setActiveTab('home');
@@ -129,6 +130,7 @@ const Index = () => {
           resumo: assuntoData.texto,
           glossario: assuntoData.glossario,
           exemplo: assuntoData.exemplo || '',
+          mapaMental: assuntoData.mapaMental || '',
           assuntoId: assuntoData.id
         });
       }
@@ -343,6 +345,7 @@ const Index = () => {
                         resumo: assuntoData.texto,
                         glossario: assuntoData.glossario,
                         exemplo: assuntoData.exemplo || '',
+                        mapaMental: assuntoData.mapaMental || '',
                         assuntoId: assuntoData.id
                       });
                     }
@@ -363,6 +366,7 @@ const Index = () => {
             resumo={viewState.resumo} 
             glossario={viewState.glossario}
             exemplo={viewState.exemplo}
+            mapaMental={viewState.mapaMental}
             assuntoId={viewState.assuntoId} 
             onBack={() => setViewState({
               type: 'assuntos',

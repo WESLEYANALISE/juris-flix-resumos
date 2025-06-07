@@ -13,6 +13,7 @@ interface ResumoData {
   texto: string;
   glossario: string;
   exemplo?: string;
+  mapa_mental?: string;
 }
 
 interface FavoriteItem {
@@ -53,7 +54,7 @@ export const useResumos = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('RESUMOS_pro')
-        .select('*, exemplo')
+        .select('*, exemplo, mapa_mental')
         .order('area', { ascending: true })
         .order('numero_do_modulo', { ascending: true })
         .order('numero_do_tema', { ascending: true })
@@ -272,7 +273,8 @@ export const useResumos = () => {
         titulo: resumo.titulo_do_assunto,
         texto: resumo.texto,
         glossario: resumo.glossario,
-        exemplo: resumo.exemplo || ''
+        exemplo: resumo.exemplo || '',
+        mapaMental: resumo.mapa_mental || ''
       }));
   };
 
