@@ -16,13 +16,13 @@ const FloatingGlossary: React.FC<FloatingGlossaryProps> = ({ content }) => {
 
   return (
     <>
-      {/* Floating Button - Fixed positioning */}
+      {/* Floating Button - Positioned above font controls with z-50 */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed right-6 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-netflix-red hover:bg-netflix-darkRed text-white rounded-full flex items-center justify-center shadow-xl transition-all transform hover:scale-105 z-40"
+        className="fixed right-6 bottom-24 w-12 h-12 bg-netflix-red hover:bg-netflix-darkRed text-white rounded-full flex items-center justify-center shadow-xl transition-all transform hover:scale-105 z-50"
         title="Abrir Glossário"
       >
-        <BookOpen className="h-6 w-6" />
+        <BookOpen className="h-5 w-5" />
       </button>
 
       {/* Glossary Modal */}

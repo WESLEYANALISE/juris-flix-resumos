@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -9,6 +10,7 @@ import AuthDialog from './AuthDialog';
 import { useResumos } from '../hooks/useResumos';
 import { useIsMobile } from '../hooks/useIsMobile';
 import jsPDF from 'jspdf';
+
 interface ResumoViewerProps {
   area: string;
   modulo: string;
@@ -19,6 +21,7 @@ interface ResumoViewerProps {
   assuntoId: number;
   onBack: () => void;
 }
+
 const ResumoViewer: React.FC<ResumoViewerProps> = ({
   area,
   modulo,
@@ -35,17 +38,20 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
   const [downloadStatus, setDownloadStatus] = useState<string>('');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const isMobile = useIsMobile();
+  
   const {
     addToRecents,
     addToFavorites,
     removeFromFavorites,
     isFavorite
   } = useResumos();
+  
   const isItemFavorited = isFavorite(assuntoId);
+
   useEffect(() => {
-    // Add to recent access when component mounts
     addToRecents(area, modulo, tema, assunto, assuntoId);
   }, [assuntoId, addToRecents, area, modulo, tema, assunto]);
+
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollButton(window.scrollY > 300);
@@ -53,15 +59,18 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
   };
+
   const handleExportClick = () => {
     setShowAuthDialog(true);
   };
+
   const handleFavoriteToggle = () => {
     if (isItemFavorited) {
       removeFromFavorites(assuntoId);
@@ -69,51 +78,44 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       addToFavorites(area, modulo, tema, assunto, assuntoId);
     }
   };
+
   const cleanMarkdownForPDF = (text: string) => {
     let cleaned = text;
-
-    // Remove headers but keep the text
     cleaned = cleaned.replace(/^#{1,6}\s+(.+)$/gm, '$1');
-
-    // Convert bold to plain text but keep content
     cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1');
-
-    // Convert italic to plain text but keep content
     cleaned = cleaned.replace(/\*(.*?)\*/g, '$1');
-
-    // Convert inline code to plain text but keep content
     cleaned = cleaned.replace(/`(.*?)`/g, '$1');
-
-    // Remove blockquote markers but keep content
     cleaned = cleaned.replace(/^>\s+(.+)$/gm, '$1');
-
-    // Remove multiple line breaks
     cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
-
-    // Trim whitespace
     cleaned = cleaned.trim();
     return cleaned;
   };
-  const downloadPDFMobile = (pdfBlob: Blob, fileName: string) => {
-    // Para mobile, criar um iframe oculto para download
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    const url = URL.createObjectURL(pdfBlob);
-    iframe.src = url;
 
-    // Remover iframe após 5 segundos
+  const downloadPDFMobile = (pdfBlob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(pdfBlob);
+    
+    // Try to open in a new window/tab for mobile browsers
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.location.href = url;
+    } else {
+      // Fallback: create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // Clean up URL after delay
     setTimeout(() => {
-      document.body.removeChild(iframe);
       URL.revokeObjectURL(url);
     }, 5000);
-
-    // Também criar link de download como fallback
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
   };
+
   const downloadPDFDesktop = (pdfBlob: Blob, fileName: string) => {
     const url = URL.createObjectURL(pdfBlob);
     const link = document.createElement('a');
@@ -127,10 +129,12 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       URL.revokeObjectURL(url);
     }, 1000);
   };
+
   const handleAuthenticate = async (email: string, password: string) => {
     try {
       setIsGeneratingPDF(true);
       setDownloadStatus('Gerando PDF...');
+      
       const pdf = new jsPDF();
       const margin = 20;
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -163,10 +167,8 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
 
-      // Split content into lines that fit the page width
       const contentLines = pdf.splitTextToSize(cleanContent, maxWidth);
       for (let i = 0; i < contentLines.length; i++) {
-        // Check if we need a new page
         if (currentY + 6 > pageHeight - margin) {
           pdf.addPage();
           currentY = margin;
@@ -174,16 +176,20 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         pdf.text(contentLines[i], margin, currentY);
         currentY += 6;
       }
+
       const fileName = `${assunto.replace(/[^a-zA-Z0-9\s]/g, '_').replace(/\s+/g, '_')}.pdf`;
       setDownloadStatus('Preparando download...');
+      
       const pdfBlob = pdf.output('blob');
+      
       if (isMobile) {
         downloadPDFMobile(pdfBlob, fileName);
-        setDownloadStatus('Download iniciado!');
+        setDownloadStatus('Abrindo no navegador...');
       } else {
         downloadPDFDesktop(pdfBlob, fileName);
         setDownloadStatus('Download concluído!');
       }
+      
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       setDownloadStatus('Erro ao gerar PDF');
@@ -193,29 +199,49 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
       setTimeout(() => setDownloadStatus(''), 3000);
     }
   };
-  return <div className="min-h-screen bg-netflix-black animate-fade-in">
+
+  return (
+    <div className="min-h-screen bg-netflix-black animate-fade-in">
       <div className="container mx-auto py-6 max-w-5xl px-0">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-slide-in-top px-[14px]">
-          <button onClick={onBack} className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-all duration-300 hover:scale-105 transform">
+          <button 
+            onClick={onBack} 
+            className="flex items-center gap-2 text-netflix-red hover:text-netflix-darkRed transition-all duration-300 hover:scale-105 transform"
+          >
             <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Voltar</span>
           </button>
           
           <div className="flex flex-col items-end gap-3">
             <div className="flex items-center gap-1 py-0 px-[13px]">
-              <FavoriteButton assuntoId={assuntoId} isFavorited={isItemFavorited} onToggle={handleFavoriteToggle} />
+              <FavoriteButton 
+                assuntoId={assuntoId} 
+                isFavorited={isItemFavorited} 
+                onToggle={handleFavoriteToggle} 
+              />
               
               <CopyButton text={resumo} assunto={assunto} />
 
-              <button onClick={handleExportClick} disabled={isGeneratingPDF} title={isGeneratingPDF ? 'Gerando PDF...' : 'Baixar PDF'} className="p-2 rounded-full text-gray-400 hover:text-netflix-lightGray hover:bg-netflix-gray/20 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed py-[13px] px-[13px]">
-                {isGeneratingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <button 
+                onClick={handleExportClick} 
+                disabled={isGeneratingPDF} 
+                title={isGeneratingPDF ? 'Gerando PDF...' : 'Baixar PDF'} 
+                className="p-2 rounded-full text-gray-400 hover:text-netflix-lightGray hover:bg-netflix-gray/20 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed py-[13px] px-[13px]"
+              >
+                {isGeneratingPDF ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
               </button>
             </div>
             
-            {downloadStatus && <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded animate-pulse">
+            {downloadStatus && (
+              <p className="text-xs text-netflix-red bg-netflix-darkGray px-2 py-1 rounded animate-pulse">
                 {downloadStatus}
-              </p>}
+              </p>
+            )}
           </div>
         </div>
 
@@ -243,14 +269,26 @@ const ResumoViewer: React.FC<ResumoViewerProps> = ({
         </div>
       </div>
 
-      {/* Floating Controls */}
-      <FloatingControls fontSize={fontSize} onFontSizeChange={setFontSize} onScrollToTop={scrollToTop} showScrollButton={showScrollButton} />
-
-      {/* Floating Glossary */}
+      {/* Floating Glossary - positioned above controls */}
       <FloatingGlossary content={glossario} />
 
+      {/* Floating Controls */}
+      <FloatingControls 
+        fontSize={fontSize} 
+        onFontSizeChange={setFontSize} 
+        onScrollToTop={scrollToTop} 
+        showScrollButton={showScrollButton} 
+      />
+
       {/* Auth Dialog */}
-      <AuthDialog isOpen={showAuthDialog} onClose={() => setShowAuthDialog(false)} onAuthenticate={handleAuthenticate} title={assunto} />
-    </div>;
+      <AuthDialog 
+        isOpen={showAuthDialog} 
+        onClose={() => setShowAuthDialog(false)} 
+        onAuthenticate={handleAuthenticate} 
+        title={assunto} 
+      />
+    </div>
+  );
 };
+
 export default ResumoViewer;

@@ -1,18 +1,27 @@
+
 import React from 'react';
 import { BookOpen, ChevronRight } from 'lucide-react';
+
 interface ModuloCardProps {
   numero: string;
   nome: string;
   temasCount: number;
+  assuntosCount?: number;
   onClick: () => void;
 }
+
 const ModuloCard: React.FC<ModuloCardProps> = ({
   numero,
   nome,
   temasCount,
+  assuntosCount = 0,
   onClick
 }) => {
-  return <div onClick={onClick} className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-6 cursor-pointer hover:bg-netflix-gray transition-all duration-300 hover:border-netflix-red group py-[14px] px-[20px]">
+  return (
+    <div 
+      onClick={onClick} 
+      className="bg-netflix-darkGray border border-netflix-gray rounded-xl p-6 cursor-pointer hover:bg-netflix-gray transition-all duration-300 hover:border-netflix-red group py-[14px] px-[20px]"
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4 flex-1">
           <div className="p-3 bg-netflix-red/20 rounded-lg group-hover:bg-netflix-red/30 transition-colors">
@@ -27,13 +36,22 @@ const ModuloCard: React.FC<ModuloCardProps> = ({
             <h3 className="font-semibold text-netflix-lightGray mb-2 line-clamp-2 text-base">
               {nome}
             </h3>
-            <p className="text-gray-400 text-sm">
-              {temasCount} tema{temasCount !== 1 ? 's' : ''}
-            </p>
+            <div className="space-y-1">
+              <p className="text-gray-400 text-sm">
+                {temasCount} tema{temasCount !== 1 ? 's' : ''}
+              </p>
+              {assuntosCount > 0 && (
+                <p className="text-gray-500 text-xs">
+                  {assuntosCount} assunto{assuntosCount !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
           </div>
         </div>
         <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-netflix-red transition-colors" />
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default ModuloCard;

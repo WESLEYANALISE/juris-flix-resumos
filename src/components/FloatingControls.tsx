@@ -23,14 +23,14 @@ const FloatingControls: React.FC<FloatingControlsProps> = ({
   };
 
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50 items-end">
-      {/* Font Control */}
+    <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40 items-end">
+      {/* Font Control - Now with red styling */}
       <div className="relative">
         <button
           onClick={() => setShowFontControls(!showFontControls)}
-          className="w-12 h-12 bg-netflix-darkGray border border-netflix-gray rounded-full flex items-center justify-center shadow-xl hover:bg-netflix-gray transition-colors"
+          className="w-12 h-12 bg-netflix-red border border-netflix-red rounded-full flex items-center justify-center shadow-xl hover:bg-netflix-darkRed transition-colors"
         >
-          <Type className="h-5 w-5 text-netflix-lightGray" />
+          <Type className="h-5 w-5 text-white" />
         </button>
         
         {showFontControls && (

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Heart } from 'lucide-react';
 
 interface FavoriteButtonProps {
@@ -20,7 +20,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   return (
     <button
       onClick={handleToggle}
-      className={`p-2 rounded-full transition-colors duration-200 hover:bg-netflix-gray/30 ${
+      className={`p-2 rounded-full transition-all duration-300 hover:bg-netflix-gray/30 transform hover:scale-110 ${
         isFavorited 
           ? 'text-netflix-red' 
           : 'text-gray-400 hover:text-netflix-red'
@@ -28,7 +28,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       title={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
     >
       <Heart 
-        className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} 
+        className={`h-4 w-4 transition-all duration-300 ${isFavorited ? 'fill-current scale-110' : ''}`} 
       />
     </button>
   );
