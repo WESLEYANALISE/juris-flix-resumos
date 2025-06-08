@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
@@ -11,6 +10,7 @@ import FavoritesList from '../components/FavoritesList';
 import RecentsList from '../components/RecentsList';
 import SearchWithPreview from '../components/SearchWithPreview';
 import JuridicalLogo from '../components/JuridicalLogo';
+import LoadingSpinner from '../components/ui/loading-spinner';
 
 type ViewState = {
   type: 'areas';
@@ -72,8 +72,8 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-netflix-red mx-auto mb-4"></div>
-          <p className="text-netflix-lightGray">Carregando resumos...</p>
+          <LoadingSpinner size="lg" className="mx-auto mb-4" />
+          <p className="text-netflix-lightGray animate-pulse">Carregando resumos...</p>
         </div>
       </div>
     );
@@ -85,6 +85,12 @@ const Index = () => {
         <div className="text-center">
           <p className="text-netflix-red mb-4">Erro ao carregar dados</p>
           <p className="text-gray-400">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-netflix-red text-white rounded hover:bg-netflix-darkRed transition-colors"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
@@ -201,7 +207,7 @@ const Index = () => {
         );
         
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in">
             <div className="text-center py-8">
               <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
                 Resumos Jurídicos
@@ -212,11 +218,13 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {areas.map(({ area, resumosCount }) => (
+              {areas.map(({ area, resumosCount }, index) => (
                 <AreaCard 
                   key={area} 
                   area={area} 
-                  resumosCount={resumosCount} 
+                  resumosCount={resumosCount}
+                  sequenceNumber={index + 1}
+                  totalCount={areas.length}
                   onClick={() => setViewState({ type: 'modulos', area })} 
                 />
               ))}

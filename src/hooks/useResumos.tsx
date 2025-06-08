@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -38,17 +38,80 @@ interface RecentItem {
   accessed_at: string;
 }
 
+// Cache global para evitar múltiplas requisições
+let globalResumos: ResumoData[] = [];
+let isDataLoaded = false;
+let loadingPromise: Promise<ResumoData[]> | null = null;
+
 export const useResumos = () => {
-  const [resumos, setResumos] = useState<ResumoData[]>([]);
+  const [resumos, setResumos] = useState<ResumoData[]>(globalResumos);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [recents, setRecents] = useState<RecentItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isDataLoaded);
   const [error, setError] = useState<string | null>(null);
   
   const { user } = useAuth();
 
+  const fetchResumos = async (): Promise<ResumoData[]> => {
+    // Se já temos uma requisição em andamento, aguarda ela
+    if (loadingPromise) {
+      return loadingPromise;
+    }
+
+    // Se os dados já foram carregados, retorna do cache
+    if (isDataLoaded && globalResumos.length > 0) {
+      return globalResumos;
+    }
+
+    // Cria nova requisição
+    loadingPromise = (async () => {
+      try {
+        console.log('Carregando resumos do Supabase...');
+        const { data, error } = await supabase
+          .from('RESUMOS_pro')
+          .select('*')
+          .order('area', { ascending: true })
+          .order('numero_do_modulo', { ascending: true })
+          .order('numero_do_tema', { ascending: true })
+          .order('numero_do_assunto', { ascending: true });
+
+        if (error) throw error;
+        
+        globalResumos = data || [];
+        isDataLoaded = true;
+        console.log(`${globalResumos.length} resumos carregados`);
+        
+        return globalResumos;
+      } catch (err) {
+        console.error('Erro ao carregar resumos:', err);
+        throw err;
+      } finally {
+        loadingPromise = null;
+      }
+    })();
+
+    return loadingPromise;
+  };
+
   useEffect(() => {
-    fetchResumos();
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchResumos();
+        setResumos(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar resumos');
+        console.error('Error fetching resumos:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
     if (user) {
       fetchFavorites();
       fetchRecents();
@@ -57,42 +120,6 @@ export const useResumos = () => {
       setRecents([]);
     }
   }, [user]);
-
-  const fetchResumos = async () => {
-    try {
-      setLoading(true);
-      
-      // Otimização: usar select específico e ordenação no banco
-      const { data, error } = await supabase
-        .from('RESUMOS_pro')
-        .select(`
-          id,
-          area,
-          numero_do_modulo,
-          nome_do_modulo,
-          numero_do_tema,
-          nome_do_tema,
-          numero_do_assunto,
-          titulo_do_assunto,
-          texto,
-          glossario,
-          exemplo,
-          mapa_mental
-        `)
-        .order('area', { ascending: true })
-        .order('numero_do_modulo', { ascending: true })
-        .order('numero_do_tema', { ascending: true })
-        .order('numero_do_assunto', { ascending: true });
-
-      if (error) throw error;
-      setResumos(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar resumos');
-      console.error('Error fetching resumos:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchFavorites = async () => {
     if (!user) return;
@@ -127,87 +154,125 @@ export const useResumos = () => {
     }
   };
 
-  // Memoização dos cálculos para melhor performance
-  const getAreas = () => {
-    const areasMap = new Map();
+  // Memoização otimizada com cache de resultados
+  const areasCache = useMemo(() => {
+    const areasMap = new Map<string, number>();
     resumos.forEach(resumo => {
-      if (!areasMap.has(resumo.area)) {
-        areasMap.set(resumo.area, 0);
-      }
-      areasMap.set(resumo.area, areasMap.get(resumo.area) + 1);
+      areasMap.set(resumo.area, (areasMap.get(resumo.area) || 0) + 1);
     });
     
     return Array.from(areasMap.entries()).map(([area, resumosCount]) => ({
       area,
       resumosCount
     }));
-  };
+  }, [resumos]);
+
+  const modulosCache = useMemo(() => {
+    const cache = new Map<string, any[]>();
+    
+    resumos.forEach(resumo => {
+      const cacheKey = resumo.area;
+      if (!cache.has(cacheKey)) {
+        const modulosMap = new Map();
+        resumos
+          .filter(r => r.area === resumo.area)
+          .forEach(r => {
+            const moduloKey = `${r.numero_do_modulo}-${r.nome_do_modulo}`;
+            if (!modulosMap.has(moduloKey)) {
+              modulosMap.set(moduloKey, {
+                numero: r.numero_do_modulo,
+                nome: r.nome_do_modulo,
+                temas: new Set(),
+                assuntos: new Set()
+              });
+            }
+            modulosMap.get(moduloKey).temas.add(`${r.numero_do_tema}-${r.nome_do_tema}`);
+            modulosMap.get(moduloKey).assuntos.add(r.id);
+          });
+
+        cache.set(cacheKey, Array.from(modulosMap.entries()).map(([key, modulo]) => ({
+          numero: modulo.numero,
+          nome: modulo.nome,
+          temasCount: modulo.temas.size,
+          assuntosCount: modulo.assuntos.size
+        })));
+      }
+    });
+    
+    return cache;
+  }, [resumos]);
+
+  const temasCache = useMemo(() => {
+    const cache = new Map<string, any[]>();
+    
+    resumos.forEach(resumo => {
+      const cacheKey = `${resumo.area}-${resumo.numero_do_modulo}`;
+      if (!cache.has(cacheKey)) {
+        const temasMap = new Map();
+        resumos
+          .filter(r => r.area === resumo.area && r.numero_do_modulo === resumo.numero_do_modulo)
+          .forEach(r => {
+            const temaKey = `${r.numero_do_tema}-${r.nome_do_tema}`;
+            if (!temasMap.has(temaKey)) {
+              temasMap.set(temaKey, {
+                numero: r.numero_do_tema,
+                nome: r.nome_do_tema,
+                assuntos: new Set()
+              });
+            }
+            temasMap.get(temaKey).assuntos.add(r.titulo_do_assunto);
+          });
+
+        cache.set(cacheKey, Array.from(temasMap.entries()).map(([key, tema]) => ({
+          numero: tema.numero,
+          nome: tema.nome,
+          assuntosCount: tema.assuntos.size
+        })));
+      }
+    });
+    
+    return cache;
+  }, [resumos]);
+
+  const assuntosCache = useMemo(() => {
+    const cache = new Map<string, any[]>();
+    
+    resumos.forEach(resumo => {
+      const cacheKey = `${resumo.area}-${resumo.numero_do_modulo}-${resumo.numero_do_tema}`;
+      if (!cache.has(cacheKey)) {
+        cache.set(cacheKey, resumos
+          .filter(r => 
+            r.area === resumo.area && 
+            r.numero_do_modulo === resumo.numero_do_modulo && 
+            r.numero_do_tema === resumo.numero_do_tema
+          )
+          .map(r => ({
+            id: r.id,
+            numero: r.numero_do_assunto,
+            titulo: r.titulo_do_assunto,
+            texto: r.texto,
+            glossario: r.glossario,
+            exemplo: r.exemplo || '',
+            mapaMental: r.mapa_mental || ''
+          })));
+      }
+    });
+    
+    return cache;
+  }, [resumos]);
+
+  const getAreas = () => areasCache;
 
   const getModulosByArea = (area: string) => {
-    const modulosMap = new Map();
-    resumos
-      .filter(resumo => resumo.area === area)
-      .forEach(resumo => {
-        const moduloKey = `${resumo.numero_do_modulo}-${resumo.nome_do_modulo}`;
-        if (!modulosMap.has(moduloKey)) {
-          modulosMap.set(moduloKey, {
-            numero: resumo.numero_do_modulo,
-            nome: resumo.nome_do_modulo,
-            temas: new Set(),
-            assuntos: new Set()
-          });
-        }
-        modulosMap.get(moduloKey).temas.add(`${resumo.numero_do_tema}-${resumo.nome_do_tema}`);
-        modulosMap.get(moduloKey).assuntos.add(resumo.id);
-      });
-
-    return Array.from(modulosMap.entries()).map(([key, modulo]) => ({
-      numero: modulo.numero,
-      nome: modulo.nome,
-      temasCount: modulo.temas.size,
-      assuntosCount: modulo.assuntos.size
-    }));
+    return modulosCache.get(area) || [];
   };
 
   const getTemasByModulo = (area: string, numeroModulo: string) => {
-    const temasMap = new Map();
-    resumos
-      .filter(resumo => resumo.area === area && resumo.numero_do_modulo === numeroModulo)
-      .forEach(resumo => {
-        const temaKey = `${resumo.numero_do_tema}-${resumo.nome_do_tema}`;
-        if (!temasMap.has(temaKey)) {
-          temasMap.set(temaKey, {
-            numero: resumo.numero_do_tema,
-            nome: resumo.nome_do_tema,
-            assuntos: new Set()
-          });
-        }
-        temasMap.get(temaKey).assuntos.add(resumo.titulo_do_assunto);
-      });
-
-    return Array.from(temasMap.entries()).map(([key, tema]) => ({
-      numero: tema.numero,
-      nome: tema.nome,
-      assuntosCount: tema.assuntos.size
-    }));
+    return temasCache.get(`${area}-${numeroModulo}`) || [];
   };
 
   const getAssuntosByTema = (area: string, numeroModulo: string, numeroTema: string) => {
-    return resumos
-      .filter(resumo => 
-        resumo.area === area && 
-        resumo.numero_do_modulo === numeroModulo && 
-        resumo.numero_do_tema === numeroTema
-      )
-      .map(resumo => ({
-        id: resumo.id,
-        numero: resumo.numero_do_assunto,
-        titulo: resumo.titulo_do_assunto,
-        texto: resumo.texto,
-        glossario: resumo.glossario,
-        exemplo: resumo.exemplo || '',
-        mapaMental: resumo.mapa_mental || ''
-      }));
+    return assuntosCache.get(`${area}-${numeroModulo}-${numeroTema}`) || [];
   };
 
   const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
@@ -262,7 +327,6 @@ export const useResumos = () => {
     }
 
     try {
-      // Otimização: upsert em uma única operação
       const { error } = await supabase
         .from('resumos_recentes')
         .upsert({
