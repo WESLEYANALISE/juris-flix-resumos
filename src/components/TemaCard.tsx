@@ -94,7 +94,7 @@ const TemaCard: React.FC<TemaCardProps> = ({
               </p>
               {sequenceNumber && totalCount && (
                 <span className="text-xs text-gray-500">
-                  • {sequenceNumber}/{totalCount}
+                  • Tema {sequenceNumber} de {totalCount}
                 </span>
               )}
             </div>

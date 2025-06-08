@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, ChevronRight } from 'lucide-react';
 import FavoriteButton from './FavoriteButton';
 
 interface AssuntoCardProps {
@@ -33,7 +33,7 @@ const AssuntoCard: React.FC<AssuntoCardProps> = ({
     onToggleFavorite();
   };
 
-  // Use the same color logic as ModuloCard (based on area + module number)
+  // Use the same color logic as ModuloCard and TemaCard
   const getCardColor = (area: string, numero: string) => {
     const combinedText = area + numero;
     const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
@@ -74,34 +74,41 @@ const AssuntoCard: React.FC<AssuntoCardProps> = ({
   const iconColorClass = getIconColor(area, modulo);
 
   return (
-    <div 
+    <button 
       onClick={onClick}
-      className={`w-full p-4 border transition-all duration-300 group rounded-xl cursor-pointer ${cardColorClass}`}
+      className={`w-full p-5 border transition-all duration-300 text-left group px-[16px] py-[5px] rounded-xl ${cardColorClass}`}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between px-0 py-[15px]">
         <div className="flex items-center gap-3 flex-1">
-          <FileText className={`h-5 w-5 flex-shrink-0 ${iconColorClass}`} />
+          <div className="p-2 bg-black/10 rounded-md group-hover:bg-black/20 transition-colors">
+            <FileText className={`h-5 w-5 ${iconColorClass}`} />
+          </div>
           <div className="flex-1">
-            <span className="text-netflix-lightGray group-hover:text-white font-medium text-sm block">
+            <h4 className="text-base font-medium text-netflix-lightGray mb-1 group-hover:text-white">
               {assunto}
-            </span>
-            {sequenceNumber && totalCount && (
-              <span className="text-xs text-gray-400 mt-1 block">
-                {sequenceNumber} de {totalCount}
-              </span>
-            )}
+            </h4>
+            <div className="flex items-center gap-2">
+              {sequenceNumber && totalCount && (
+                <span className="text-xs text-gray-400">
+                  Assunto {sequenceNumber} de {totalCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         
-        <div onClick={handleFavoriteClick} className="flex-shrink-0">
-          <FavoriteButton 
-            assuntoId={assuntoId} 
-            isFavorited={isFavorited} 
-            onToggle={onToggleFavorite} 
-          />
+        <div className="flex items-center gap-2">
+          <div onClick={handleFavoriteClick} className="flex-shrink-0">
+            <FavoriteButton 
+              assuntoId={assuntoId} 
+              isFavorited={isFavorited} 
+              onToggle={onToggleFavorite} 
+            />
+          </div>
+          <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
