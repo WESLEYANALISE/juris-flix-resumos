@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { BookOpen, ChevronRight } from 'lucide-react';
-import { getAreaColors } from '../utils/areaColors';
 
 interface ModuloCardProps {
   numero: string;
@@ -24,46 +23,59 @@ const ModuloCard: React.FC<ModuloCardProps> = ({
   totalCount,
   area = ''
 }) => {
-  const colors = getAreaColors(area);
+  // Generate color based on area and module number
+  const getCardColor = (area: string, numero: string) => {
+    const combinedText = area + numero;
+    const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    
+    const colors = [
+      'bg-red-500/15 border-red-500/30 hover:border-red-400',
+      'bg-blue-500/15 border-blue-500/30 hover:border-blue-400',
+      'bg-green-500/15 border-green-500/30 hover:border-green-400',
+      'bg-yellow-500/15 border-yellow-500/30 hover:border-yellow-400',
+      'bg-purple-500/15 border-purple-500/30 hover:border-purple-400',
+      'bg-pink-500/15 border-pink-500/30 hover:border-pink-400',
+      'bg-indigo-500/15 border-indigo-500/30 hover:border-indigo-400',
+      'bg-teal-500/15 border-teal-500/30 hover:border-teal-400',
+    ];
+    
+    return colors[hash % colors.length];
+  };
+
+  const getIconAndNumberColor = (area: string, numero: string) => {
+    const combinedText = area + numero;
+    const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    
+    const colors = [
+      'text-red-400',
+      'text-blue-400', 
+      'text-green-400',
+      'text-yellow-400',
+      'text-purple-400',
+      'text-pink-400',
+      'text-indigo-400',
+      'text-teal-400',
+    ];
+    
+    return colors[hash % colors.length];
+  };
+
+  const cardColorClass = getCardColor(area, numero);
+  const iconColorClass = getIconAndNumberColor(area, numero);
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full p-6 bg-netflix-darkGray border border-netflix-gray rounded-xl hover:border-opacity-50 hover:scale-105 transition-all duration-300 text-left group relative overflow-hidden animate-fade-in"
-      style={{ 
-        '--hover-border-color': colors.primary,
-        borderColor: 'var(--hover-border-color)'
-      } as React.CSSProperties}
+    <div 
+      onClick={onClick} 
+      className={`border rounded-xl p-6 cursor-pointer transition-all duration-300 group py-[14px] px-[20px] ${cardColorClass}`}
     >
-      {/* Background gradient on hover */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300"
-        style={{ 
-          background: `linear-gradient(135deg, ${colors.primary}20, ${colors.secondary}10)`
-        }}
-      />
-      
-      <div className="relative z-10 flex items-start justify-between">
+      <div className="flex items-start justify-between">
         <div className="flex items-start gap-4 flex-1">
-          <div 
-            className="p-3 rounded-lg group-hover:scale-110 transition-all duration-300 relative"
-            style={{ backgroundColor: `${colors.primary}15` }}
-          >
-            <BookOpen 
-              className="h-6 w-6 transition-colors duration-300" 
-              style={{ color: colors.primary }}
-            />
-            <div 
-              className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300"
-              style={{ backgroundColor: colors.primary }}
-            />
+          <div className="p-3 bg-black/10 rounded-lg group-hover:bg-black/20 transition-colors">
+            <BookOpen className={`h-6 w-6 ${iconColorClass}`} />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span 
-                className="font-semibold text-sm transition-colors duration-300"
-                style={{ color: colors.primary }}
-              >
+              <span className={`font-semibold text-sm ${iconColorClass}`}>
                 Módulo {numero}
               </span>
               {sequenceNumber && totalCount && (
@@ -72,42 +84,24 @@ const ModuloCard: React.FC<ModuloCardProps> = ({
                 </span>
               )}
             </div>
-            <h3 className="font-semibold text-netflix-lightGray mb-2 line-clamp-2 text-base group-hover:text-white transition-colors duration-300">
+            <h3 className="font-semibold text-netflix-lightGray mb-2 line-clamp-2 text-base group-hover:text-white">
               {nome}
             </h3>
             <div className="space-y-1">
-              <div 
-                className="inline-flex px-3 py-1 rounded-full text-sm font-medium transition-all duration-300"
-                style={{ 
-                  backgroundColor: `${colors.primary}20`,
-                  color: colors.primary
-                }}
-              >
+              <p className="text-gray-400 text-sm">
                 {temasCount} tema{temasCount !== 1 ? 's' : ''}
-              </div>
+              </p>
               {assuntosCount > 0 && (
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-gray-500 text-xs">
                   {assuntosCount} assunto{assuntosCount !== 1 ? 's' : ''}
                 </p>
               )}
             </div>
           </div>
         </div>
-        <ChevronRight 
-          className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-all duration-300 group-hover:text-white" 
-        />
+        <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
       </div>
-
-      {/* Decorative elements */}
-      <div 
-        className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-5 group-hover:opacity-10 transition-opacity duration-300"
-        style={{ backgroundColor: colors.primary, transform: 'translate(50%, -50%)' }}
-      />
-      <div 
-        className="absolute bottom-0 left-0 w-14 h-14 rounded-full opacity-5 group-hover:opacity-10 transition-opacity duration-300"
-        style={{ backgroundColor: colors.secondary, transform: 'translate(-50%, 50%)' }}
-      />
-    </button>
+    </div>
   );
 };
 
