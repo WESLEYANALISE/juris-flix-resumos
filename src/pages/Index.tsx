@@ -241,13 +241,16 @@ const Index = () => {
               <p className="text-gray-400">Selecione um módulo para continuar</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {modulos.map(({ numero, nome, temasCount, assuntosCount }) => (
+              {modulos.map(({ numero, nome, temasCount, assuntosCount }, index) => (
                 <ModuloCard 
                   key={`${numero}-${nome}`} 
                   numero={numero} 
                   nome={nome} 
                   temasCount={temasCount}
                   assuntosCount={assuntosCount}
+                  area={viewState.area}
+                  sequenceNumber={index + 1}
+                  totalCount={modulos.length}
                   onClick={() => setViewState({
                     type: 'temas',
                     area: viewState.area,
@@ -281,11 +284,15 @@ const Index = () => {
               <p className="text-gray-400">{viewState.area}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {temas.map(({ numero, nome, assuntosCount }) => (
+              {temas.map(({ numero, nome, assuntosCount }, index) => (
                 <TemaCard 
                   key={`${numero}-${nome}`} 
                   tema={nome} 
-                  assuntosCount={assuntosCount} 
+                  assuntosCount={assuntosCount}
+                  area={viewState.area}
+                  modulo={viewState.numeroModulo}
+                  sequenceNumber={index + 1}
+                  totalCount={temas.length}
                   onClick={() => setViewState({
                     type: 'assuntos',
                     area: viewState.area,
@@ -323,16 +330,18 @@ const Index = () => {
               <p className="text-gray-400">{viewState.area} › {viewState.nomeModulo}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {assuntos.map(({ id, titulo }) => (
+              {assuntos.map(({ id, titulo }, index) => (
                 <AssuntoCard 
                   key={id} 
                   assunto={titulo} 
                   assuntoId={id} 
                   area={viewState.area} 
-                  modulo={viewState.nomeModulo} 
-                  tema={viewState.nomeTema} 
+                  modulo={viewState.numeroModulo} 
+                  tema={viewState.numeroTema} 
                   isFavorited={isFavorite(id)} 
                   onToggleFavorite={() => handleToggleFavorite(viewState.area, viewState.nomeModulo, viewState.nomeTema, titulo, id)} 
+                  sequenceNumber={index + 1}
+                  totalCount={assuntos.length}
                   onClick={() => {
                     const assuntoData = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).find(a => a.id === id);
                     if (assuntoData) {
