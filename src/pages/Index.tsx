@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useResumos } from '../hooks/useResumos';
 import AreaCard from '../components/AreaCard';
@@ -9,8 +8,10 @@ import ResumoViewer from '../components/ResumoViewer';
 import Navigation from '../components/Navigation';
 import FavoritesList from '../components/FavoritesList';
 import RecentsList from '../components/RecentsList';
-import SearchWithPreview from '../components/SearchWithPreview';
 import JuridicalLogo from '../components/JuridicalLogo';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import PersonalDashboard from '@/components/PersonalDashboard';
+import AdvancedSearch from '@/components/AdvancedSearch';
 
 type ViewState = {
   type: 'areas';
@@ -52,6 +53,11 @@ const Index = () => {
   });
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchFilters, setSearchFilters] = useState<{
+    area?: string;
+    modulo?: string;
+    tema?: string;
+  }>({});
 
   const {
     loading,
@@ -172,8 +178,107 @@ const Index = () => {
     }
   };
 
+  const getBreadcrumbItems = () => {
+    const items = [
+      {
+        label: 'Início',
+        onClick: () => setViewState({ type: 'areas' }),
+        isActive: viewState.type === 'areas'
+      }
+    ];
+
+    if (viewState.type === 'modulos') {
+      items.push({
+        label: viewState.area,
+        isActive: true
+      });
+    } else if (viewState.type === 'temas') {
+      items.push(
+        {
+          label: viewState.area,
+          onClick: () => setViewState({ type: 'modulos', area: viewState.area })
+        },
+        {
+          label: viewState.nomeModulo,
+          isActive: true
+        }
+      );
+    } else if (viewState.type === 'assuntos') {
+      items.push(
+        {
+          label: viewState.area,
+          onClick: () => setViewState({ type: 'modulos', area: viewState.area })
+        },
+        {
+          label: viewState.nomeModulo,
+          onClick: () => setViewState({
+            type: 'temas',
+            area: viewState.area,
+            numeroModulo: viewState.numeroModulo,
+            nomeModulo: viewState.nomeModulo
+          })
+        },
+        {
+          label: viewState.nomeTema,
+          isActive: true
+        }
+      );
+    } else if (viewState.type === 'resumo') {
+      items.push(
+        {
+          label: viewState.area,
+          onClick: () => setViewState({ type: 'modulos', area: viewState.area })
+        },
+        {
+          label: viewState.nomeModulo,
+          onClick: () => setViewState({
+            type: 'temas',
+            area: viewState.area,
+            numeroModulo: viewState.numeroModulo,
+            nomeModulo: viewState.nomeModulo
+          })
+        },
+        {
+          label: viewState.nomeTema,
+          onClick: () => setViewState({
+            type: 'assuntos',
+            area: viewState.area,
+            numeroModulo: viewState.numeroModulo,
+            nomeModulo: viewState.nomeModulo,
+            numeroTema: viewState.numeroTema,
+            nomeTema: viewState.nomeTema
+          })
+        },
+        {
+          label: viewState.assunto,
+          isActive: true
+        }
+      );
+    }
+
+    return items;
+  };
+
+  const applyFilters = (items: any[]) => {
+    return items.filter(item => {
+      const matchesSearch = !searchTerm || 
+        (item.area && item.area.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.nome && item.nome.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.titulo && item.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesAreaFilter = !searchFilters.area || item.area === searchFilters.area;
+      const matchesModuloFilter = !searchFilters.modulo || 
+        (item.nome && item.nome.toLowerCase().includes(searchFilters.modulo.toLowerCase()));
+      const matchesTemaFilter = !searchFilters.tema || 
+        (item.nome && item.nome.toLowerCase().includes(searchFilters.tema.toLowerCase()));
+
+      return matchesSearch && matchesAreaFilter && matchesModuloFilter && matchesTemaFilter;
+    });
+  };
+
   const showHeader = viewState.type === 'areas' && activeTab === 'home';
   const showNavigation = viewState.type !== 'resumo';
+  const availableAreas = getAreas().map(({ area }) => area);
 
   const renderContent = () => {
     if (activeTab === 'favorites') {
@@ -196,20 +301,24 @@ const Index = () => {
 
     switch (viewState.type) {
       case 'areas':
-        const areas = getAreas().filter(({ area }) => 
-          area && area.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        if (activeTab === 'home' && searchTerm === '' && Object.keys(searchFilters).length === 0) {
+          return <PersonalDashboard />;
+        }
+        
+        const areas = applyFilters(getAreas());
         
         return (
           <div className="space-y-6">
-            <div className="text-center py-8">
-              <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
-                Resumos Jurídicos
-              </h1>
-              <p className="text-gray-400">
-                Selecione uma área do direito para começar
-              </p>
-            </div>
+            {!searchTerm && Object.keys(searchFilters).length === 0 && (
+              <div className="text-center py-8">
+                <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
+                  Resumos Jurídicos
+                </h1>
+                <p className="text-gray-400">
+                  Selecione uma área do direito para começar
+                </p>
+              </div>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {areas.map(({ area, resumosCount }) => (
@@ -225,18 +334,11 @@ const Index = () => {
         );
 
       case 'modulos':
-        const modulos = getModulosByArea(viewState.area).filter(({ nome }) => 
-          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const modulos = applyFilters(getModulosByArea(viewState.area));
         
         return (
           <div className="space-y-6">
-            <button 
-              onClick={() => setViewState({ type: 'areas' })} 
-              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
-            >
-              ← Voltar para áreas
-            </button>
+            <Breadcrumbs items={getBreadcrumbItems()} />
             <div className="space-y-2">
               <h2 className="text-3xl font-bold text-netflix-lightGray">{viewState.area}</h2>
               <p className="text-gray-400">Selecione um módulo para continuar</p>
@@ -265,21 +367,11 @@ const Index = () => {
         );
 
       case 'temas':
-        const temas = getTemasByModulo(viewState.area, viewState.numeroModulo).filter(({ nome }) => 
-          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const temas = applyFilters(getTemasByModulo(viewState.area, viewState.numeroModulo));
         
         return (
           <div className="space-y-6">
-            <button 
-              onClick={() => setViewState({
-                type: 'modulos',
-                area: viewState.area
-              })} 
-              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
-            >
-              ← Voltar para módulos
-            </button>
+            <Breadcrumbs items={getBreadcrumbItems()} />
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-netflix-lightGray">{viewState.nomeModulo}</h2>
               <p className="text-gray-400">{viewState.area}</p>
@@ -309,23 +401,11 @@ const Index = () => {
         );
 
       case 'assuntos':
-        const assuntos = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).filter(({ titulo }) => 
-          titulo && titulo.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const assuntos = applyFilters(getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema));
         
         return (
           <div className="space-y-6">
-            <button 
-              onClick={() => setViewState({
-                type: 'temas',
-                area: viewState.area,
-                numeroModulo: viewState.numeroModulo,
-                nomeModulo: viewState.nomeModulo
-              })} 
-              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
-            >
-              ← Voltar para temas
-            </button>
+            <Breadcrumbs items={getBreadcrumbItems()} />
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-netflix-lightGray">{viewState.nomeTema}</h2>
               <p className="text-gray-400">{viewState.area} › {viewState.nomeModulo}</p>
@@ -412,10 +492,12 @@ const Index = () => {
           />
 
           {activeTab === 'home' && (
-            <SearchWithPreview 
+            <AdvancedSearch 
               searchTerm={searchTerm} 
-              onSearchChange={setSearchTerm} 
-              onResultClick={handleSearchResultClick} 
+              onSearchChange={setSearchTerm}
+              filters={searchFilters}
+              onFiltersChange={setSearchFilters}
+              availableAreas={availableAreas}
             />
           )}
 
