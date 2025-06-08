@@ -27,15 +27,13 @@ const CopyButton: React.FC<CopyButtonProps> = ({
       .trim();
   };
 
-  const isInIframe = window !== window.parent;
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-  const fallbackCopyTextToClipboard = (text: string): Promise<boolean> => {
-    return new Promise((resolve) => {
+  const copyToClipboard = async (text: string): Promise<boolean> => {
+    // Método principal: execCommand (funciona em todos os contextos)
+    const fallbackCopyTextToClipboard = (text: string): boolean => {
       const textArea = document.createElement('textarea');
       textArea.value = text;
       
-      // Estilo para garantir que funcione em todos os dispositivos
+      // Configurações para máxima compatibilidade
       textArea.style.position = 'fixed';
       textArea.style.top = '0';
       textArea.style.left = '0';
@@ -47,65 +45,51 @@ const CopyButton: React.FC<CopyButtonProps> = ({
       textArea.style.boxShadow = 'none';
       textArea.style.background = 'transparent';
       textArea.style.fontSize = '16px'; // Previne zoom no iOS
+      textArea.style.opacity = '0';
+      textArea.style.pointerEvents = 'none';
+      textArea.setAttribute('readonly', '');
+      textArea.setAttribute('contenteditable', 'true');
       
       document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
       
-      // Para iOS Safari - configuração especial
-      if (navigator.userAgent.match(/ipad|iphone/i)) {
-        textArea.contentEditable = 'true';
-        textArea.readOnly = false;
-        const range = document.createRange();
-        range.selectNodeContents(textArea);
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-        textArea.setSelectionRange(0, 999999);
-      } else {
-        textArea.setSelectionRange(0, 999999);
-      }
-
-      let successful = false;
       try {
-        successful = document.execCommand('copy');
+        textArea.focus();
+        textArea.select();
+        
+        // Configuração especial para iOS
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          const range = document.createRange();
+          range.selectNodeContents(textArea);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+          textArea.setSelectionRange(0, 999999);
+        } else {
+          textArea.setSelectionRange(0, 999999);
+        }
+
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        return successful;
       } catch (err) {
-        console.warn('Fallback: Oops, unable to copy', err);
+        document.body.removeChild(textArea);
+        return false;
       }
+    };
 
-      document.body.removeChild(textArea);
-      resolve(successful);
-    });
-  };
-
-  const copyToClipboard = async (text: string): Promise<boolean> => {
-    // Método 1: Clipboard API moderno (quando disponível e em contexto seguro)
-    if (navigator.clipboard && window.isSecureContext && !isInIframe) {
+    // Tenta primeiro o método moderno (se disponível e em contexto seguro)
+    if (navigator.clipboard && window.isSecureContext) {
       try {
         await navigator.clipboard.writeText(text);
         return true;
       } catch (err) {
-        console.warn('Clipboard API failed, trying fallback');
+        // Se falhar, usa o fallback
+        return fallbackCopyTextToClipboard(text);
       }
     }
 
-    // Método 2: Fallback para mobile e iframe
-    const fallbackSuccess = await fallbackCopyTextToClipboard(text);
-    if (fallbackSuccess) {
-      return true;
-    }
-
-    // Método 3: Última tentativa com Clipboard API (mesmo em contexto inseguro)
-    if (navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return true;
-      } catch (err) {
-        console.warn('Final clipboard attempt failed');
-      }
-    }
-
-    return false;
+    // Usa diretamente o fallback para iframe e contextos inseguros
+    return fallbackCopyTextToClipboard(text);
   };
 
   const handleCopy = async (e: React.MouseEvent | React.TouchEvent) => {
@@ -124,30 +108,46 @@ const CopyButton: React.FC<CopyButtonProps> = ({
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } else {
-        // Se falhou, mostrar o texto em um modal/alert para cópia manual
-        if (confirm('Não foi possível copiar automaticamente. Deseja ver o texto para copiar manualmente?')) {
-          const newWindow = window.open('', '_blank');
+        // Fallback final: prompt do usuário
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+        
+        if (isMobile) {
+          // Para mobile, usa alert com texto selecionável
+          setTimeout(() => {
+            prompt('Texto para copiar (Ctrl+C ou Cmd+C):', formattedText);
+          }, 100);
+        } else {
+          // Para desktop, abre nova janela
+          const newWindow = window.open('', '_blank', 'width=600,height=400');
           if (newWindow) {
             newWindow.document.write(`
               <html>
-                <head><title>Texto para Copiar</title></head>
-                <body style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6;">
+                <head>
+                  <title>Texto para Copiar</title>
+                  <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+                    textarea { width: 100%; height: 300px; padding: 10px; font-size: 14px; }
+                    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; }
+                  </style>
+                </head>
+                <body>
                   <h2>Selecione e copie o texto abaixo:</h2>
-                  <textarea style="width: 100%; height: 400px; padding: 10px;" readonly>${formattedText}</textarea>
-                  <button onclick="window.close()" style="margin-top: 10px; padding: 10px 20px;">Fechar</button>
+                  <textarea readonly onclick="this.select()">${formattedText}</textarea>
+                  <br>
+                  <button onclick="window.close()">Fechar</button>
+                  <script>
+                    document.querySelector('textarea').select();
+                  </script>
                 </body>
               </html>
             `);
-          } else {
-            // Fallback para quando popup é bloqueado
-            alert(`Texto para copiar:\n\n${formattedText}`);
           }
         }
       }
       
     } catch (error) {
       console.error('Erro ao copiar texto:', error);
-      alert('Erro ao copiar. Tente novamente.');
     } finally {
       setIsAnimating(false);
     }

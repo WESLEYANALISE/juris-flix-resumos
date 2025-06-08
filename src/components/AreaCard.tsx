@@ -30,70 +30,43 @@ const AreaCard: React.FC<AreaCardProps> = ({ area, resumosCount, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="w-full p-6 bg-netflix-darkGray border border-netflix-gray rounded-xl hover:border-opacity-50 hover:scale-105 transition-all duration-300 text-left group relative overflow-hidden animate-fade-in"
+      className="w-full p-5 border transition-all duration-300 text-left group px-[16px] py-[20px] rounded-xl"
       style={{ 
-        '--hover-border-color': colors.primary,
-        borderColor: 'var(--hover-border-color)'
+        backgroundColor: `${colors.primary}15`,
+        borderColor: `${colors.primary}30`,
+        '--hover-border-color': colors.primary
       } as React.CSSProperties}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = colors.primary;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = `${colors.primary}30`;
+      }}
     >
-      {/* Background gradient on hover */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300"
-        style={{ 
-          background: `linear-gradient(135deg, ${colors.primary}20, ${colors.secondary}10)`
-        }}
-      />
-      
-      <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1">
           <div 
-            className="p-4 rounded-xl group-hover:scale-110 transition-all duration-300 relative"
-            style={{ backgroundColor: `${colors.primary}15` }}
+            className="p-2 rounded-md group-hover:scale-110 transition-all duration-300"
+            style={{ backgroundColor: `${colors.primary}20` }}
           >
             <AreaIcon 
-              className="h-7 w-7 transition-colors duration-300" 
+              className="h-5 w-5 transition-colors duration-300" 
               style={{ color: colors.primary }}
             />
-            <div 
-              className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300"
-              style={{ backgroundColor: colors.primary }}
-            />
           </div>
-          <div>
-            <h3 className="text-xl font-bold text-netflix-lightGray mb-2 group-hover:text-white transition-colors duration-300">
+          <div className="flex-1">
+            <h3 className="text-base font-medium text-netflix-lightGray mb-1 group-hover:text-white transition-colors duration-300">
               {area}
             </h3>
-            <div className="flex items-center gap-2">
-              <div 
-                className="px-3 py-1 rounded-full text-sm font-medium transition-all duration-300"
-                style={{ 
-                  backgroundColor: `${colors.primary}20`,
-                  color: colors.primary
-                }}
-              >
-                {resumosCount} resumos
-              </div>
-              <div className="text-gray-400 text-sm">
-                disponíveis
-              </div>
-            </div>
+            <p className="text-gray-400 text-sm">
+              {resumosCount} resumo{resumosCount !== 1 ? 's' : ''}
+            </p>
           </div>
         </div>
         <ChevronRight 
-          className="h-6 w-6 text-gray-400 group-hover:translate-x-1 transition-all duration-300" 
-          style={{ '--hover-color': colors.primary } as React.CSSProperties}
+          className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors duration-300" 
         />
       </div>
-
-      {/* Decorative elements */}
-      <div 
-        className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-5 group-hover:opacity-10 transition-opacity duration-300"
-        style={{ backgroundColor: colors.primary, transform: 'translate(50%, -50%)' }}
-      />
-      <div 
-        className="absolute bottom-0 left-0 w-16 h-16 rounded-full opacity-5 group-hover:opacity-10 transition-opacity duration-300"
-        style={{ backgroundColor: colors.secondary, transform: 'translate(-50%, 50%)' }}
-      />
     </button>
   );
 };

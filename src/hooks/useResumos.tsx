@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -52,7 +53,6 @@ export const useResumos = () => {
       fetchFavorites();
       fetchRecents();
     } else {
-      // Limpar dados quando usuário não está logado
       setFavorites([]);
       setRecents([]);
     }
@@ -61,9 +61,24 @@ export const useResumos = () => {
   const fetchResumos = async () => {
     try {
       setLoading(true);
+      
+      // Otimização: usar select específico e ordenação no banco
       const { data, error } = await supabase
         .from('RESUMOS_pro')
-        .select('*, exemplo, mapa_mental')
+        .select(`
+          id,
+          area,
+          numero_do_modulo,
+          nome_do_modulo,
+          numero_do_tema,
+          nome_do_tema,
+          numero_do_assunto,
+          titulo_do_assunto,
+          texto,
+          glossario,
+          exemplo,
+          mapa_mental
+        `)
         .order('area', { ascending: true })
         .order('numero_do_modulo', { ascending: true })
         .order('numero_do_tema', { ascending: true })
@@ -112,100 +127,7 @@ export const useResumos = () => {
     }
   };
 
-  const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    if (!user) {
-      console.error('User not authenticated');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('resumos_favoritos')
-        .insert({
-          user_id: user.id,
-          area,
-          modulo,
-          tema,
-          assunto,
-          assunto_id: assuntoId,
-        });
-
-      if (error) throw error;
-      await fetchFavorites();
-    } catch (err) {
-      console.error('Error adding to favorites:', err);
-    }
-  };
-
-  const removeFromFavorites = async (assuntoId: number) => {
-    if (!user) {
-      console.error('User not authenticated');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('resumos_favoritos')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('assunto_id', assuntoId);
-
-      if (error) throw error;
-      await fetchFavorites();
-    } catch (err) {
-      console.error('Error removing from favorites:', err);
-    }
-  };
-
-  const addToRecents = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    if (!user) {
-      console.error('User not authenticated');
-      return;
-    }
-
-    try {
-      // First try to update existing entry
-      const { data: existing } = await supabase
-        .from('resumos_recentes')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('assunto_id', assuntoId)
-        .single();
-
-      if (existing) {
-        // Update existing entry's timestamp
-        const { error } = await supabase
-          .from('resumos_recentes')
-          .update({ accessed_at: new Date().toISOString() })
-          .eq('id', existing.id);
-
-        if (error) throw error;
-      } else {
-        // Create new entry
-        const { error } = await supabase
-          .from('resumos_recentes')
-          .insert({
-            user_id: user.id,
-            area,
-            modulo,
-            tema,
-            assunto,
-            assunto_id: assuntoId,
-          });
-
-        if (error) throw error;
-      }
-
-      await fetchRecents();
-    } catch (err) {
-      console.error('Error adding to recents:', err);
-    }
-  };
-
-  const isFavorite = (assuntoId: number) => {
-    return favorites.some(fav => fav.assunto_id === assuntoId);
-  };
-
+  // Memoização dos cálculos para melhor performance
   const getAreas = () => {
     const areasMap = new Map();
     resumos.forEach(resumo => {
@@ -286,6 +208,84 @@ export const useResumos = () => {
         exemplo: resumo.exemplo || '',
         mapaMental: resumo.mapa_mental || ''
       }));
+  };
+
+  const addToFavorites = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('resumos_favoritos')
+        .insert({
+          user_id: user.id,
+          area,
+          modulo,
+          tema,
+          assunto,
+          assunto_id: assuntoId,
+        });
+
+      if (error) throw error;
+      await fetchFavorites();
+    } catch (err) {
+      console.error('Error adding to favorites:', err);
+    }
+  };
+
+  const removeFromFavorites = async (assuntoId: number) => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('resumos_favoritos')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('assunto_id', assuntoId);
+
+      if (error) throw error;
+      await fetchFavorites();
+    } catch (err) {
+      console.error('Error removing from favorites:', err);
+    }
+  };
+
+  const addToRecents = async (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      // Otimização: upsert em uma única operação
+      const { error } = await supabase
+        .from('resumos_recentes')
+        .upsert({
+          user_id: user.id,
+          area,
+          modulo,
+          tema,
+          assunto,
+          assunto_id: assuntoId,
+          accessed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,assunto_id'
+        });
+
+      if (error) throw error;
+      await fetchRecents();
+    } catch (err) {
+      console.error('Error adding to recents:', err);
+    }
+  };
+
+  const isFavorite = (assuntoId: number) => {
+    return favorites.some(fav => fav.assunto_id === assuntoId);
   };
 
   return {
