@@ -13,7 +13,6 @@ import SearchWithPreview from '../components/SearchWithPreview';
 import AdvancedFilters, { FilterState } from '../components/AdvancedFilters';
 import JuridicalLogo from '../components/JuridicalLogo';
 import LoadingSpinner from '../components/ui/loading-spinner';
-
 type ViewState = {
   type: 'areas';
 } | {
@@ -45,9 +44,7 @@ type ViewState = {
   mapaMental: string;
   assuntoId: number;
 };
-
 type ActiveTab = 'home' | 'favorites' | 'recent' | 'trending';
-
 const Index = () => {
   const [viewState, setViewState] = useState<ViewState>({
     type: 'areas'
@@ -63,7 +60,6 @@ const Index = () => {
     sortBy: 'title',
     sortOrder: 'asc'
   });
-
   const {
     loading,
     error,
@@ -79,39 +75,28 @@ const Index = () => {
     resumos,
     searchInContent
   } = useResumosOptimized();
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+    return <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" className="mx-auto mb-4" />
           <p className="text-netflix-lightGray animate-pulse">Carregando resumos otimizados...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (error) {
-    return (
-      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
+    return <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
           <p className="text-netflix-red mb-4">Erro ao carregar dados</p>
           <p className="text-gray-400">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-netflix-red text-white rounded hover:bg-netflix-darkRed transition-colors"
-          >
+          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-netflix-red text-white rounded hover:bg-netflix-darkRed transition-colors">
             Tentar novamente
           </button>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const handleSubjectClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
     const allAssuntos = resumos.filter(r => r.id === assuntoId);
     const assuntoData = allAssuntos[0];
-    
     if (assuntoData) {
       setViewState({
         type: 'resumo',
@@ -130,14 +115,13 @@ const Index = () => {
       setActiveTab('home');
     }
   };
-
   const handleSearchResultClick = (result: any) => {
-    const { path } = result;
-    
+    const {
+      path
+    } = result;
     if (path.assunto) {
       const assuntos = getAssuntosByTema(path.area, path.modulo.split('-')[0], path.tema.split('-')[0]);
       const assuntoData = assuntos.find(a => a.titulo === path.assunto);
-      
       if (assuntoData) {
         setViewState({
           type: 'resumo',
@@ -176,11 +160,9 @@ const Index = () => {
         area: path.area
       });
     }
-    
     setActiveTab('home');
     setSearchTerm('');
   };
-
   const handleToggleFavorite = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
     if (isFavorite(assuntoId)) {
       removeFromFavorites(assuntoId);
@@ -188,75 +170,50 @@ const Index = () => {
       addToFavorites(area, modulo, tema, assunto, assuntoId);
     }
   };
-
   const applyFilters = (areas: any[]) => {
     let filtered = areas;
-
     if (filters.selectedAreas.length > 0) {
-      filtered = filtered.filter(({ area }) => filters.selectedAreas.includes(area));
+      filtered = filtered.filter(({
+        area
+      }) => filters.selectedAreas.includes(area));
     }
 
     // Aplicar busca
     if (searchTerm || filters.searchTerm) {
       const term = searchTerm || filters.searchTerm;
-      filtered = filtered.filter(({ area }) => 
-        area && area.toLowerCase().includes(term.toLowerCase())
-      );
+      filtered = filtered.filter(({
+        area
+      }) => area && area.toLowerCase().includes(term.toLowerCase()));
     }
 
     // Aplicar ordenação
     filtered.sort((a, b) => {
       const aValue = filters.sortBy === 'title' ? a.area : a.resumosCount;
       const bValue = filters.sortBy === 'title' ? b.area : b.resumosCount;
-      
       if (filters.sortBy === 'title') {
-        return filters.sortOrder === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+        return filters.sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
       } else {
         return filters.sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
       }
     });
-
     return filtered;
   };
-
   const showHeader = viewState.type === 'areas' && activeTab === 'home';
   const showNavigation = viewState.type !== 'resumo';
-
   const renderContent = () => {
     if (activeTab === 'favorites') {
-      return (
-        <ImprovedFavoritesList 
-          favorites={favorites} 
-          onSubjectClick={handleSubjectClick} 
-        />
-      );
+      return <ImprovedFavoritesList favorites={favorites} onSubjectClick={handleSubjectClick} />;
     }
-
     if (activeTab === 'recent') {
-      return (
-        <RecentsList 
-          recents={recents} 
-          onSubjectClick={handleSubjectClick} 
-        />
-      );
+      return <RecentsList recents={recents} onSubjectClick={handleSubjectClick} />;
     }
-
     if (activeTab === 'trending') {
-      return (
-        <PopularContent 
-          onSubjectClick={handleSubjectClick} 
-        />
-      );
+      return <PopularContent onSubjectClick={handleSubjectClick} />;
     }
-
     switch (viewState.type) {
       case 'areas':
         const areas = applyFilters(getAreas());
-        
-        return (
-          <div className="space-y-6 animate-fade-in">
+        return <div className="space-y-6 animate-fade-in">
             <div className="text-center py-8">
               <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
                 Resumos Jurídicos
@@ -264,37 +221,29 @@ const Index = () => {
               <p className="text-gray-400">
                 Selecione uma área do direito para começar
               </p>
-              {filters.selectedAreas.length > 0 && (
-                <p className="text-netflix-red text-sm mt-2">
+              {filters.selectedAreas.length > 0 && <p className="text-netflix-red text-sm mt-2">
                   Filtrado por: {filters.selectedAreas.join(', ')}
-                </p>
-              )}
+                </p>}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {areas.map(({ area, resumosCount }) => (
-                <AreaCard 
-                  key={area} 
-                  area={area} 
-                  resumosCount={resumosCount}
-                  onClick={() => setViewState({ type: 'modulos', area })} 
-                />
-              ))}
+              {areas.map(({
+              area,
+              resumosCount
+            }) => <AreaCard key={area} area={area} resumosCount={resumosCount} onClick={() => setViewState({
+              type: 'modulos',
+              area
+            })} />)}
             </div>
-          </div>
-        );
-
+          </div>;
       case 'modulos':
-        const modulos = getModulosByArea(viewState.area).filter(({ nome }) => 
-          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        return (
-          <div className="space-y-6">
-            <button 
-              onClick={() => setViewState({ type: 'areas' })} 
-              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
-            >
+        const modulos = getModulosByArea(viewState.area).filter(({
+          nome
+        }) => nome && nome.toLowerCase().includes(searchTerm.toLowerCase()));
+        return <div className="space-y-6">
+            <button onClick={() => setViewState({
+            type: 'areas'
+          })} className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium">
               ← Voltar para áreas
             </button>
             <div className="space-y-2">
@@ -302,42 +251,28 @@ const Index = () => {
               <p className="text-gray-400">Selecione um módulo para continuar</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {modulos.map(({ numero, nome, temasCount, assuntosCount }, index) => (
-                <ModuloCard 
-                  key={`${numero}-${nome}`} 
-                  numero={numero} 
-                  nome={nome} 
-                  temasCount={temasCount}
-                  assuntosCount={assuntosCount}
-                  sequenceNumber={index + 1}
-                  totalCount={modulos.length}
-                  area={viewState.area}
-                  onClick={() => setViewState({
-                    type: 'temas',
-                    area: viewState.area,
-                    numeroModulo: numero,
-                    nomeModulo: nome
-                  })} 
-                />
-              ))}
+              {modulos.map(({
+              numero,
+              nome,
+              temasCount,
+              assuntosCount
+            }, index) => <ModuloCard key={`${numero}-${nome}`} numero={numero} nome={nome} temasCount={temasCount} assuntosCount={assuntosCount} sequenceNumber={index + 1} totalCount={modulos.length} area={viewState.area} onClick={() => setViewState({
+              type: 'temas',
+              area: viewState.area,
+              numeroModulo: numero,
+              nomeModulo: nome
+            })} />)}
             </div>
-          </div>
-        );
-
+          </div>;
       case 'temas':
-        const temas = getTemasByModulo(viewState.area, viewState.numeroModulo).filter(({ nome }) => 
-          nome && nome.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        return (
-          <div className="space-y-6">
-            <button 
-              onClick={() => setViewState({
-                type: 'modulos',
-                area: viewState.area
-              })} 
-              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
-            >
+        const temas = getTemasByModulo(viewState.area, viewState.numeroModulo).filter(({
+          nome
+        }) => nome && nome.toLowerCase().includes(searchTerm.toLowerCase()));
+        return <div className="space-y-6">
+            <button onClick={() => setViewState({
+            type: 'modulos',
+            area: viewState.area
+          })} className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium">
               ← Voltar para módulos
             </button>
             <div className="space-y-2">
@@ -345,45 +280,31 @@ const Index = () => {
               <p className="text-gray-400">{viewState.area}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {temas.map(({ numero, nome, assuntosCount }, index) => (
-                <TemaCard 
-                  key={`${numero}-${nome}`} 
-                  tema={nome} 
-                  assuntosCount={assuntosCount}
-                  sequenceNumber={index + 1}
-                  totalCount={temas.length}
-                  area={viewState.area}
-                  modulo={viewState.numeroModulo}
-                  onClick={() => setViewState({
-                    type: 'assuntos',
-                    area: viewState.area,
-                    numeroModulo: viewState.numeroModulo,
-                    nomeModulo: viewState.nomeModulo,
-                    numeroTema: numero,
-                    nomeTema: nome
-                  })} 
-                />
-              ))}
+              {temas.map(({
+              numero,
+              nome,
+              assuntosCount
+            }, index) => <TemaCard key={`${numero}-${nome}`} tema={nome} assuntosCount={assuntosCount} sequenceNumber={index + 1} totalCount={temas.length} area={viewState.area} modulo={viewState.numeroModulo} onClick={() => setViewState({
+              type: 'assuntos',
+              area: viewState.area,
+              numeroModulo: viewState.numeroModulo,
+              nomeModulo: viewState.nomeModulo,
+              numeroTema: numero,
+              nomeTema: nome
+            })} />)}
             </div>
-          </div>
-        );
-
+          </div>;
       case 'assuntos':
-        const assuntos = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).filter(({ titulo }) => 
-          titulo && titulo.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        return (
-          <div className="space-y-6">
-            <button 
-              onClick={() => setViewState({
-                type: 'temas',
-                area: viewState.area,
-                numeroModulo: viewState.numeroModulo,
-                nomeModulo: viewState.nomeModulo
-              })} 
-              className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium"
-            >
+        const assuntos = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).filter(({
+          titulo
+        }) => titulo && titulo.toLowerCase().includes(searchTerm.toLowerCase()));
+        return <div className="space-y-6">
+            <button onClick={() => setViewState({
+            type: 'temas',
+            area: viewState.area,
+            numeroModulo: viewState.numeroModulo,
+            nomeModulo: viewState.nomeModulo
+          })} className="text-netflix-red hover:text-netflix-darkRed transition-colors font-medium">
               ← Voltar para temas
             </button>
             <div className="space-y-2">
@@ -391,109 +312,59 @@ const Index = () => {
               <p className="text-gray-400">{viewState.area} › {viewState.nomeModulo}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {assuntos.map(({ id, titulo }, index) => (
-                <AssuntoCard 
-                  key={id} 
-                  assunto={titulo} 
-                  assuntoId={id} 
-                  area={viewState.area} 
-                  modulo={viewState.nomeModulo} 
-                  tema={viewState.nomeTema}
-                  sequenceNumber={index + 1}
-                  totalCount={assuntos.length}
-                  isFavorited={isFavorite(id)} 
-                  onToggleFavorite={() => handleToggleFavorite(viewState.area, viewState.nomeModulo, viewState.nomeTema, titulo, id)} 
-                  onClick={() => {
-                    const assuntoData = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).find(a => a.id === id);
-                    if (assuntoData) {
-                      setViewState({
-                        type: 'resumo',
-                        area: viewState.area,
-                        numeroModulo: viewState.numeroModulo,
-                        nomeModulo: viewState.nomeModulo,
-                        numeroTema: viewState.numeroTema,
-                        nomeTema: viewState.nomeTema,
-                        assunto: assuntoData.titulo,
-                        resumo: assuntoData.texto,
-                        glossario: assuntoData.glossario,
-                        exemplo: assuntoData.exemplo || '',
-                        mapaMental: assuntoData.mapaMental || '',
-                        assuntoId: assuntoData.id
-                      });
-                    }
-                  }} 
-                />
-              ))}
+              {assuntos.map(({
+              id,
+              titulo
+            }, index) => <AssuntoCard key={id} assunto={titulo} assuntoId={id} area={viewState.area} modulo={viewState.nomeModulo} tema={viewState.nomeTema} sequenceNumber={index + 1} totalCount={assuntos.length} isFavorited={isFavorite(id)} onToggleFavorite={() => handleToggleFavorite(viewState.area, viewState.nomeModulo, viewState.nomeTema, titulo, id)} onClick={() => {
+              const assuntoData = getAssuntosByTema(viewState.area, viewState.numeroModulo, viewState.numeroTema).find(a => a.id === id);
+              if (assuntoData) {
+                setViewState({
+                  type: 'resumo',
+                  area: viewState.area,
+                  numeroModulo: viewState.numeroModulo,
+                  nomeModulo: viewState.nomeModulo,
+                  numeroTema: viewState.numeroTema,
+                  nomeTema: viewState.nomeTema,
+                  assunto: assuntoData.titulo,
+                  resumo: assuntoData.texto,
+                  glossario: assuntoData.glossario,
+                  exemplo: assuntoData.exemplo || '',
+                  mapaMental: assuntoData.mapaMental || '',
+                  assuntoId: assuntoData.id
+                });
+              }
+            }} />)}
             </div>
-          </div>
-        );
-
+          </div>;
       case 'resumo':
-        return (
-          <ResumoViewer 
-            area={viewState.area} 
-            modulo={viewState.nomeModulo} 
-            tema={viewState.nomeTema} 
-            assunto={viewState.assunto} 
-            resumo={viewState.resumo} 
-            glossario={viewState.glossario}
-            exemplo={viewState.exemplo}
-            mapaMental={viewState.mapaMental}
-            assuntoId={viewState.assuntoId} 
-            onBack={() => setViewState({
-              type: 'assuntos',
-              area: viewState.area,
-              numeroModulo: viewState.numeroModulo,
-              nomeModulo: viewState.nomeModulo,
-              numeroTema: viewState.numeroTema,
-              nomeTema: viewState.nomeTema
-            })} 
-          />
-        );
-
+        return <ResumoViewer area={viewState.area} modulo={viewState.nomeModulo} tema={viewState.nomeTema} assunto={viewState.assunto} resumo={viewState.resumo} glossario={viewState.glossario} exemplo={viewState.exemplo} mapaMental={viewState.mapaMental} assuntoId={viewState.assuntoId} onBack={() => setViewState({
+          type: 'assuntos',
+          area: viewState.area,
+          numeroModulo: viewState.numeroModulo,
+          nomeModulo: viewState.nomeModulo,
+          numeroTema: viewState.numeroTema,
+          nomeTema: viewState.nomeTema
+        })} />;
       default:
         return null;
     }
   };
-
-  return (
-    <div className="min-h-screen bg-netflix-black">
-      {showNavigation && (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {showHeader && (
-            <header className="mb-8">
+  return <div className="min-h-screen bg-netflix-black">
+      {showNavigation && <div className="container mx-auto py-8 max-w-7xl px-[10px]">
+          {showHeader && <header className="mb-8">
               <JuridicalLogo />
-            </header>
-          )}
+            </header>}
 
-          <AdvancedNavigation 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab}
-            onFilterToggle={() => setShowFilters(true)}
-            showFilters={showFilters}
-          />
+          <AdvancedNavigation activeTab={activeTab} onTabChange={setActiveTab} onFilterToggle={() => setShowFilters(true)} showFilters={showFilters} />
 
-          {activeTab === 'home' && (
-            <SearchWithPreview 
-              searchTerm={searchTerm} 
-              onSearchChange={setSearchTerm} 
-              onResultClick={handleSearchResultClick} 
-            />
-          )}
+          {activeTab === 'home' && <SearchWithPreview searchTerm={searchTerm} onSearchChange={setSearchTerm} onResultClick={handleSearchResultClick} />}
 
           <main>{renderContent()}</main>
-        </div>
-      )}
+        </div>}
 
       {viewState.type === 'resumo' && renderContent()}
 
-      <AdvancedFilters
-        isOpen={showFilters}
-        onClose={() => setShowFilters(false)}
-        onFiltersChange={setFilters}
-      />
-    </div>
-  );
+      <AdvancedFilters isOpen={showFilters} onClose={() => setShowFilters(false)} onFiltersChange={setFilters} />
+    </div>;
 };
-
 export default Index;

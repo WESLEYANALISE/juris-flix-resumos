@@ -73,7 +73,7 @@ const PopularContent = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {popularItems.map(item => <div key={item.id} onClick={() => onSubjectClick(item.area, item.modulo, item.tema, item.assunto, item.id)} className="group bg-netflix-darkGray border border-netflix-gray rounded-xl p-4 hover:border-netflix-red transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-netflix-red/10 transform hover:scale-[1.02]">
+        {popularItems.map(item => <div key={item.id} onClick={() => onSubjectClick(item.area, item.modulo, item.tema, item.assunto, item.id)} className="group bg-netflix-darkGray border border-netflix-gray rounded-xl p-4 hover:border-netflix-red transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-netflix-red/10 transform hover:scale-[1.02] px-0">
             <div className="flex items-start gap-4">
               {/* Ranking */}
               <div className={`text-2xl font-bold ${getRankColor(item.rank)} min-w-[60px] text-center`}>
