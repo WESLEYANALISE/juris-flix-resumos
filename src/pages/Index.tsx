@@ -215,7 +215,7 @@ const Index = () => {
         const areas = applyFilters(getAreas());
         return <div className="space-y-6 animate-fade-in">
             <div className="text-center py-8">
-              <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
+              <h1 className="font-bold text-netflix-lightGray mb-2 text-3xl">
                 Resumos Jurídicos
               </h1>
               <p className="text-gray-400">
