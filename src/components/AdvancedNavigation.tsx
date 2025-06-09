@@ -1,10 +1,10 @@
 
-import { Heart, Home, Clock, Search, Filter, Settings, TrendingUp, Bookmark, Star } from 'lucide-react';
+import { Heart, Home, Clock, Search, Filter, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 interface AdvancedNavigationProps {
-  activeTab: 'home' | 'favorites' | 'recent' | 'trending' | 'bookmarks';
-  onTabChange: (tab: 'home' | 'favorites' | 'recent' | 'trending' | 'bookmarks') => void;
+  activeTab: 'home' | 'favorites' | 'recent' | 'trending';
+  onTabChange: (tab: 'home' | 'favorites' | 'recent' | 'trending') => void;
   onFilterToggle: () => void;
   showFilters: boolean;
 }
@@ -40,13 +40,6 @@ const AdvancedNavigation = ({ activeTab, onTabChange, onFilterToggle, showFilter
       icon: TrendingUp,
       description: 'Mais acessados',
       gradient: 'from-orange-500 to-red-600'
-    },
-    {
-      id: 'bookmarks',
-      label: 'Salvos',
-      icon: Bookmark,
-      description: 'Marcadores pessoais',
-      gradient: 'from-purple-500 to-violet-600'
     }
   ] as const;
 
@@ -101,11 +94,6 @@ const AdvancedNavigation = ({ activeTab, onTabChange, onFilterToggle, showFilter
         <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-netflix-lightGray hover:text-netflix-red hover:bg-netflix-darkGray transition-all duration-300">
           <Search className="h-4 w-4" />
           <span className="hidden sm:inline">Busca Avançada</span>
-        </button>
-
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-netflix-lightGray hover:text-netflix-red hover:bg-netflix-darkGray transition-all duration-300">
-          <Settings className="h-4 w-4" />
-          <span className="hidden sm:inline">Configurações</span>
         </button>
       </div>
     </div>

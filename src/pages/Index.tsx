@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useResumosOptimized } from '../hooks/useResumosOptimized';
 import AreaCard from '../components/AreaCard';
@@ -9,6 +8,7 @@ import ResumoViewer from '../components/ResumoViewer';
 import AdvancedNavigation from '../components/AdvancedNavigation';
 import ImprovedFavoritesList from '../components/ImprovedFavoritesList';
 import RecentsList from '../components/RecentsList';
+import PopularContent from '../components/PopularContent';
 import SearchWithPreview from '../components/SearchWithPreview';
 import AdvancedFilters, { FilterState } from '../components/AdvancedFilters';
 import JuridicalLogo from '../components/JuridicalLogo';
@@ -46,7 +46,7 @@ type ViewState = {
   assuntoId: number;
 };
 
-type ActiveTab = 'home' | 'favorites' | 'recent' | 'trending' | 'bookmarks';
+type ActiveTab = 'home' | 'favorites' | 'recent' | 'trending';
 
 const Index = () => {
   const [viewState, setViewState] = useState<ViewState>({
@@ -244,43 +244,10 @@ const Index = () => {
     }
 
     if (activeTab === 'trending') {
-      // Simular conteúdo popular baseado nas áreas com mais resumos
-      const areas = getAreas().sort((a, b) => b.resumosCount - a.resumosCount).slice(0, 6);
-      
       return (
-        <div className="space-y-6 animate-fade-in">
-          <div className="text-center py-8">
-            <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
-              Conteúdo Popular
-            </h1>
-            <p className="text-gray-400">
-              As áreas mais acessadas pelos usuários
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {areas.map(({ area, resumosCount }) => (
-              <AreaCard 
-                key={area} 
-                area={area} 
-                resumosCount={resumosCount}
-                onClick={() => setViewState({ type: 'modulos', area })} 
-              />
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    if (activeTab === 'bookmarks') {
-      return (
-        <div className="text-center py-12 animate-fade-in">
-          <h2 className="text-2xl font-bold text-netflix-lightGray mb-4">Marcadores</h2>
-          <p className="text-gray-400">Funcionalidade em desenvolvimento</p>
-          <p className="text-gray-500 text-sm mt-2">
-            Em breve você poderá criar marcadores personalizados.
-          </p>
-        </div>
+        <PopularContent 
+          onSubjectClick={handleSubjectClick} 
+        />
       );
     }
 
