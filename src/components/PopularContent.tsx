@@ -1,12 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useResumosOptimized } from '../hooks/useResumosOptimized';
 import { TrendingUp, Eye, Users, Clock } from 'lucide-react';
-
 interface PopularContentProps {
   onSubjectClick: (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => void;
 }
-
 interface PopularItem {
   id: number;
   area: string;
@@ -16,54 +13,47 @@ interface PopularItem {
   views: number;
   rank: number;
 }
-
-const PopularContent = ({ onSubjectClick }: PopularContentProps) => {
-  const { resumos } = useResumosOptimized();
+const PopularContent = ({
+  onSubjectClick
+}: PopularContentProps) => {
+  const {
+    resumos
+  } = useResumosOptimized();
   const [popularItems, setPopularItems] = useState<PopularItem[]>([]);
-
   useEffect(() => {
     // Simular dados de popularidade baseados em critérios realistas
     // Em um app real, isso viria do backend com dados reais de acessos
-    const simulatedPopular = resumos
-      .map(resumo => ({
-        id: resumo.id,
-        area: resumo.area,
-        modulo: resumo.nome_do_modulo,
-        tema: resumo.nome_do_tema,
-        assunto: resumo.titulo_do_assunto,
-        // Simular views baseado no comprimento do texto e área
-        views: Math.floor(Math.random() * 1000) + (resumo.texto?.length || 0) / 10 + 
-               (resumo.area === 'Direito Constitucional' ? 200 : 0) +
-               (resumo.area === 'Direito Penal' ? 150 : 0) +
-               (resumo.area === 'Direito Civil' ? 120 : 0),
-        rank: 0
-      }))
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 20)
-      .map((item, index) => ({ ...item, rank: index + 1 }));
-
+    const simulatedPopular = resumos.map(resumo => ({
+      id: resumo.id,
+      area: resumo.area,
+      modulo: resumo.nome_do_modulo,
+      tema: resumo.nome_do_tema,
+      assunto: resumo.titulo_do_assunto,
+      // Simular views baseado no comprimento do texto e área
+      views: Math.floor(Math.random() * 1000) + (resumo.texto?.length || 0) / 10 + (resumo.area === 'Direito Constitucional' ? 200 : 0) + (resumo.area === 'Direito Penal' ? 150 : 0) + (resumo.area === 'Direito Civil' ? 120 : 0),
+      rank: 0
+    })).sort((a, b) => b.views - a.views).slice(0, 20).map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }));
     setPopularItems(simulatedPopular);
   }, [resumos]);
-
   const getRankIcon = (rank: number) => {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
     return `#${rank}`;
   };
-
   const getRankColor = (rank: number) => {
     if (rank <= 3) return 'text-yellow-400';
     if (rank <= 10) return 'text-netflix-red';
     return 'text-netflix-lightGray';
   };
-
-  return (
-    <div className="space-y-6 animate-fade-in">
+  return <div className="space-y-6 animate-fade-in">
       <div className="text-center py-8">
         <div className="flex items-center justify-center gap-3 mb-4">
           <TrendingUp className="h-8 w-8 text-netflix-red" />
-          <h1 className="text-4xl font-bold text-netflix-lightGray">
+          <h1 className="font-bold text-netflix-lightGray text-2xl">
             Conteúdo Popular
           </h1>
         </div>
@@ -83,12 +73,7 @@ const PopularContent = ({ onSubjectClick }: PopularContentProps) => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {popularItems.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => onSubjectClick(item.area, item.modulo, item.tema, item.assunto, item.id)}
-            className="group bg-netflix-darkGray border border-netflix-gray rounded-xl p-4 hover:border-netflix-red transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-netflix-red/10 transform hover:scale-[1.02]"
-          >
+        {popularItems.map(item => <div key={item.id} onClick={() => onSubjectClick(item.area, item.modulo, item.tema, item.assunto, item.id)} className="group bg-netflix-darkGray border border-netflix-gray rounded-xl p-4 hover:border-netflix-red transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-netflix-red/10 transform hover:scale-[1.02]">
             <div className="flex items-start gap-4">
               {/* Ranking */}
               <div className={`text-2xl font-bold ${getRankColor(item.rank)} min-w-[60px] text-center`}>
@@ -126,12 +111,10 @@ const PopularContent = ({ onSubjectClick }: PopularContentProps) => {
                 <TrendingUp className="h-5 w-5" />
               </div>
             </div>
-          </div>
-        ))}
+          </div>)}
       </div>
       
-      {popularItems.length === 0 && (
-        <div className="text-center py-12">
+      {popularItems.length === 0 && <div className="text-center py-12">
           <TrendingUp className="h-16 w-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-netflix-lightGray mb-2">
             Carregando ranking...
@@ -139,10 +122,7 @@ const PopularContent = ({ onSubjectClick }: PopularContentProps) => {
           <p className="text-gray-400">
             Aguarde enquanto compilamos os dados de popularidade
           </p>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
 export default PopularContent;
