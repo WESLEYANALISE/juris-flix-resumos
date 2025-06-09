@@ -1,14 +1,16 @@
+
 import { useState } from 'react';
-import { useResumos } from '../hooks/useResumos';
+import { useResumosOptimized } from '../hooks/useResumosOptimized';
 import AreaCard from '../components/AreaCard';
 import ModuloCard from '../components/ModuloCard';
 import TemaCard from '../components/TemaCard';
 import AssuntoCard from '../components/AssuntoCard';
 import ResumoViewer from '../components/ResumoViewer';
-import Navigation from '../components/Navigation';
-import FavoritesList from '../components/FavoritesList';
+import AdvancedNavigation from '../components/AdvancedNavigation';
+import ImprovedFavoritesList from '../components/ImprovedFavoritesList';
 import RecentsList from '../components/RecentsList';
 import SearchWithPreview from '../components/SearchWithPreview';
+import AdvancedFilters, { FilterState } from '../components/AdvancedFilters';
 import JuridicalLogo from '../components/JuridicalLogo';
 import LoadingSpinner from '../components/ui/loading-spinner';
 
@@ -44,7 +46,7 @@ type ViewState = {
   assuntoId: number;
 };
 
-type ActiveTab = 'home' | 'favorites' | 'recent';
+type ActiveTab = 'home' | 'favorites' | 'recent' | 'trending' | 'bookmarks';
 
 const Index = () => {
   const [viewState, setViewState] = useState<ViewState>({
@@ -52,6 +54,15 @@ const Index = () => {
   });
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    selectedAreas: [],
+    selectedModulos: [],
+    selectedTemas: [],
+    searchTerm: '',
+    sortBy: 'title',
+    sortOrder: 'asc'
+  });
 
   const {
     loading,
@@ -65,15 +76,16 @@ const Index = () => {
     addToFavorites,
     removeFromFavorites,
     isFavorite,
-    resumos
-  } = useResumos();
+    resumos,
+    searchInContent
+  } = useResumosOptimized();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-netflix-black flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" className="mx-auto mb-4" />
-          <p className="text-netflix-lightGray animate-pulse">Carregando resumos...</p>
+          <p className="text-netflix-lightGray animate-pulse">Carregando resumos otimizados...</p>
         </div>
       </div>
     );
@@ -97,7 +109,6 @@ const Index = () => {
   }
 
   const handleSubjectClick = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
-    // Buscar os dados do assunto diretamente pelo ID
     const allAssuntos = resumos.filter(r => r.id === assuntoId);
     const assuntoData = allAssuntos[0];
     
@@ -167,7 +178,7 @@ const Index = () => {
     }
     
     setActiveTab('home');
-    setSearchTerm(''); // Clear search when navigating
+    setSearchTerm('');
   };
 
   const handleToggleFavorite = (area: string, modulo: string, tema: string, assunto: string, assuntoId: number) => {
@@ -178,13 +189,45 @@ const Index = () => {
     }
   };
 
+  const applyFilters = (areas: any[]) => {
+    let filtered = areas;
+
+    if (filters.selectedAreas.length > 0) {
+      filtered = filtered.filter(({ area }) => filters.selectedAreas.includes(area));
+    }
+
+    // Aplicar busca
+    if (searchTerm || filters.searchTerm) {
+      const term = searchTerm || filters.searchTerm;
+      filtered = filtered.filter(({ area }) => 
+        area && area.toLowerCase().includes(term.toLowerCase())
+      );
+    }
+
+    // Aplicar ordenação
+    filtered.sort((a, b) => {
+      const aValue = filters.sortBy === 'title' ? a.area : a.resumosCount;
+      const bValue = filters.sortBy === 'title' ? b.area : b.resumosCount;
+      
+      if (filters.sortBy === 'title') {
+        return filters.sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      } else {
+        return filters.sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+    });
+
+    return filtered;
+  };
+
   const showHeader = viewState.type === 'areas' && activeTab === 'home';
   const showNavigation = viewState.type !== 'resumo';
 
   const renderContent = () => {
     if (activeTab === 'favorites') {
       return (
-        <FavoritesList 
+        <ImprovedFavoritesList 
           favorites={favorites} 
           onSubjectClick={handleSubjectClick} 
         />
@@ -200,11 +243,50 @@ const Index = () => {
       );
     }
 
+    if (activeTab === 'trending') {
+      // Simular conteúdo popular baseado nas áreas com mais resumos
+      const areas = getAreas().sort((a, b) => b.resumosCount - a.resumosCount).slice(0, 6);
+      
+      return (
+        <div className="space-y-6 animate-fade-in">
+          <div className="text-center py-8">
+            <h1 className="text-4xl font-bold text-netflix-lightGray mb-2">
+              Conteúdo Popular
+            </h1>
+            <p className="text-gray-400">
+              As áreas mais acessadas pelos usuários
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {areas.map(({ area, resumosCount }) => (
+              <AreaCard 
+                key={area} 
+                area={area} 
+                resumosCount={resumosCount}
+                onClick={() => setViewState({ type: 'modulos', area })} 
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'bookmarks') {
+      return (
+        <div className="text-center py-12 animate-fade-in">
+          <h2 className="text-2xl font-bold text-netflix-lightGray mb-4">Marcadores</h2>
+          <p className="text-gray-400">Funcionalidade em desenvolvimento</p>
+          <p className="text-gray-500 text-sm mt-2">
+            Em breve você poderá criar marcadores personalizados.
+          </p>
+        </div>
+      );
+    }
+
     switch (viewState.type) {
       case 'areas':
-        const areas = getAreas().filter(({ area }) => 
-          area && area.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const areas = applyFilters(getAreas());
         
         return (
           <div className="space-y-6 animate-fade-in">
@@ -215,6 +297,11 @@ const Index = () => {
               <p className="text-gray-400">
                 Selecione uma área do direito para começar
               </p>
+              {filters.selectedAreas.length > 0 && (
+                <p className="text-netflix-red text-sm mt-2">
+                  Filtrado por: {filters.selectedAreas.join(', ')}
+                </p>
+              )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -412,9 +499,11 @@ const Index = () => {
             </header>
           )}
 
-          <Navigation 
+          <AdvancedNavigation 
             activeTab={activeTab} 
-            onTabChange={setActiveTab} 
+            onTabChange={setActiveTab}
+            onFilterToggle={() => setShowFilters(true)}
+            showFilters={showFilters}
           />
 
           {activeTab === 'home' && (
@@ -430,6 +519,12 @@ const Index = () => {
       )}
 
       {viewState.type === 'resumo' && renderContent()}
+
+      <AdvancedFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        onFiltersChange={setFilters}
+      />
     </div>
   );
 };
