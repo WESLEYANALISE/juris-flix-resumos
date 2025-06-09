@@ -218,13 +218,11 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {areas.map(({ area, resumosCount }, index) => (
+              {areas.map(({ area, resumosCount }) => (
                 <AreaCard 
                   key={area} 
                   area={area} 
                   resumosCount={resumosCount}
-                  sequenceNumber={index + 1}
-                  totalCount={areas.length}
                   onClick={() => setViewState({ type: 'modulos', area })} 
                 />
               ))}
