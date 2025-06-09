@@ -60,16 +60,7 @@ const AdvancedNavigation = ({
       </nav>
 
       {/* Barra de ferramentas secundária */}
-      <div className="flex justify-center items-center gap-4 mb-6">
-        <button onClick={onFilterToggle} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${showFilters ? 'bg-netflix-red text-white' : 'text-netflix-lightGray hover:text-netflix-red hover:bg-netflix-darkGray'}`}>
-          <Filter className="h-4 w-4" />
-          <span className="hidden sm:inline">Filtros</span>
-        </button>
-
-        <div className="h-6 w-px bg-netflix-gray"></div>
-
-        
-      </div>
+      
     </div>;
 };
 export default AdvancedNavigation;
