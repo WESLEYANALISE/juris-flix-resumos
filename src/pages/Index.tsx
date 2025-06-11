@@ -8,7 +8,6 @@ import ResumoViewer from '../components/ResumoViewer';
 import AdvancedNavigation from '../components/AdvancedNavigation';
 import ImprovedFavoritesList from '../components/ImprovedFavoritesList';
 import RecentsList from '../components/RecentsList';
-import PopularContent from '../components/PopularContent';
 import SearchWithPreview from '../components/SearchWithPreview';
 import AdvancedFilters, { FilterState } from '../components/AdvancedFilters';
 import JuridicalLogo from '../components/JuridicalLogo';
@@ -44,7 +43,7 @@ type ViewState = {
   mapaMental: string;
   assuntoId: number;
 };
-type ActiveTab = 'home' | 'favorites' | 'recent' | 'trending';
+type ActiveTab = 'home' | 'favorites' | 'recent';
 const Index = () => {
   const [viewState, setViewState] = useState<ViewState>({
     type: 'areas'
@@ -218,9 +217,6 @@ const Index = () => {
     }
     if (activeTab === 'recent') {
       return <RecentsList recents={recents} onSubjectClick={handleSubjectClick} />;
-    }
-    if (activeTab === 'trending') {
-      return <PopularContent onSubjectClick={handleSubjectClick} />;
     }
     switch (viewState.type) {
       case 'areas':
