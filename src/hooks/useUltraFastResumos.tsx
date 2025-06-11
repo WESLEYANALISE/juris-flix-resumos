@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -38,10 +37,10 @@ interface RecentItem {
   accessed_at: string;
 }
 
-// Cache localStorage para persistência entre sessões
-const CACHE_KEY = 'resumos_cache';
-const CACHE_VERSION = '1.0';
-const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas
+// Cache localStorage otimizado para evitar quota exceeded
+const CACHE_KEY = 'resumos_cache_v2';
+const CACHE_VERSION = '2.0';
+const CACHE_EXPIRY = 12 * 60 * 60 * 1000; // 12 horas (reduzido)
 
 // Cache global em memória - ultra rápido
 let globalResumos: ResumoData[] = [];
@@ -71,20 +70,55 @@ const loadFromLocalStorage = (): ResumoData[] | null => {
     }
   } catch (error) {
     console.warn('Erro ao carregar cache localStorage:', error);
+    // Limpa cache corrompido
+    try {
+      localStorage.removeItem(CACHE_KEY);
+    } catch (e) {
+      console.warn('Erro ao limpar cache corrompido:', e);
+    }
   }
   return null;
 };
 
 const saveToLocalStorage = (data: ResumoData[]) => {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      data,
+    // Compacta os dados removendo campos desnecessários para cache
+    const compactData = data.map(item => ({
+      id: item.id,
+      area: item.area,
+      numero_do_modulo: item.numero_do_modulo,
+      nome_do_modulo: item.nome_do_modulo,
+      numero_do_tema: item.numero_do_tema,
+      nome_do_tema: item.nome_do_tema,
+      numero_do_assunto: item.numero_do_assunto,
+      titulo_do_assunto: item.titulo_do_assunto,
+      // Não salva texto completo no localStorage para economizar espaço
+      texto: item.texto?.substring(0, 200) + '...' || '',
+      glossario: item.glossario?.substring(0, 100) + '...' || ''
+    }));
+
+    const cacheData = {
+      data: compactData,
       timestamp: Date.now(),
       version: CACHE_VERSION
-    }));
-    console.log('💾 Dados salvos no cache localStorage');
+    };
+
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+    console.log('💾 Cache compacto salvo no localStorage');
   } catch (error) {
-    console.warn('Erro ao salvar cache localStorage:', error);
+    console.warn('Erro ao salvar cache localStorage (quota excedida):', error);
+    // Tenta limpar cache antigo e salvar novamente
+    try {
+      localStorage.clear();
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: data.slice(0, 100), // Salva apenas os primeiros 100 para garantir que cabe
+        timestamp: Date.now(),
+        version: CACHE_VERSION
+      }));
+      console.log('💾 Cache reduzido salvo após limpeza');
+    } catch (e) {
+      console.warn('Não foi possível salvar no localStorage:', e);
+    }
   }
 };
 
@@ -211,15 +245,53 @@ export const useUltraFastResumos = () => {
         
         // Primeiro, tenta carregar do localStorage
         const cachedData = loadFromLocalStorage();
-        if (cachedData) {
+        if (cachedData && cachedData.length > 0) {
+          // Se temos cache, carrega ele primeiro para exibir algo rapidamente
           globalResumos = cachedData;
           isDataLoaded = true;
           precomputeCache(globalResumos);
           console.log(`⚡ ${globalResumos.length} resumos carregados do cache!`);
+          
+          // Depois carrega os dados completos do banco em background
+          setTimeout(async () => {
+            try {
+              console.log('🔄 Atualizando dados em background...');
+              const { data, error } = await supabase
+                .from('RESUMOS_pro')
+                .select(`
+                  id,
+                  area,
+                  numero_do_modulo,
+                  nome_do_modulo,
+                  numero_do_tema,
+                  nome_do_tema,
+                  numero_do_assunto,
+                  titulo_do_assunto,
+                  texto,
+                  glossario,
+                  exemplo,
+                  mapa_mental
+                `)
+                .order('area')
+                .order('numero_do_modulo')
+                .order('numero_do_tema')
+                .order('numero_do_assunto');
+
+              if (!error && data) {
+                globalResumos = data;
+                precomputeCache(globalResumos);
+                saveToLocalStorage(globalResumos);
+                console.log('🔄 Dados atualizados em background');
+              }
+            } catch (err) {
+              console.warn('Erro ao atualizar dados em background:', err);
+            }
+          }, 100);
+          
           return globalResumos;
         }
 
-        // Se não tem cache, carrega do banco otimizado
+        // Se não tem cache, carrega do banco com seleção otimizada
         console.log('📡 Carregando do banco de dados...');
         const { data, error } = await supabase
           .from('RESUMOS_pro')
