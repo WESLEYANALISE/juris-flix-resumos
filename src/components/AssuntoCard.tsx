@@ -2,6 +2,7 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 import FavoriteButton from './FavoriteButton';
+import { getAreaColors } from '../utils/areaColors';
 
 interface AssuntoCardProps {
   assunto: string;
@@ -33,56 +34,33 @@ const AssuntoCard: React.FC<AssuntoCardProps> = ({
     onToggleFavorite();
   };
 
-  // Use the same color logic as ModuloCard (based on area + module number)
-  const getCardColor = (area: string, numero: string) => {
-    const combinedText = area + numero;
-    const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    
-    const colors = [
-      'bg-red-500/15 border-red-500/30 hover:border-red-400',
-      'bg-blue-500/15 border-blue-500/30 hover:border-blue-400',
-      'bg-green-500/15 border-green-500/30 hover:border-green-400',
-      'bg-yellow-500/15 border-yellow-500/30 hover:border-yellow-400',
-      'bg-purple-500/15 border-purple-500/30 hover:border-purple-400',
-      'bg-pink-500/15 border-pink-500/30 hover:border-pink-400',
-      'bg-indigo-500/15 border-indigo-500/30 hover:border-indigo-400',
-      'bg-teal-500/15 border-teal-500/30 hover:border-teal-400',
-    ];
-    
-    return colors[hash % colors.length];
-  };
-
-  const getIconColor = (area: string, numero: string) => {
-    const combinedText = area + numero;
-    const hash = combinedText.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    
-    const colors = [
-      'text-red-400',
-      'text-blue-400', 
-      'text-green-400',
-      'text-yellow-400',
-      'text-purple-400',
-      'text-pink-400',
-      'text-indigo-400',
-      'text-teal-400',
-    ];
-    
-    return colors[hash % colors.length];
-  };
-
-  const cardColorClass = getCardColor(area, modulo);
-  const iconColorClass = getIconColor(area, modulo);
+  const colors = getAreaColors(area);
 
   return (
     <div 
       onClick={onClick}
-      className={`w-full p-4 border transition-all duration-300 group rounded-xl cursor-pointer ${cardColorClass}`}
+      className="w-full p-4 border transition-all duration-300 group rounded-xl cursor-pointer hover:scale-105 hover:shadow-lg"
+      style={{ 
+        backgroundColor: `${colors.primary}10`,
+        borderColor: `${colors.primary}30`
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = colors.primary;
+        e.currentTarget.style.boxShadow = `0 8px 25px ${colors.primary}20`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = `${colors.primary}30`;
+        e.currentTarget.style.boxShadow = 'none';
+      }}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-1">
-          <FileText className={`h-5 w-5 flex-shrink-0 ${iconColorClass}`} />
+          <FileText 
+            className="h-5 w-5 flex-shrink-0 transition-colors duration-300" 
+            style={{ color: colors.primary }}
+          />
           <div className="flex-1">
-            <span className="text-netflix-lightGray group-hover:text-white font-medium text-sm block">
+            <span className="text-netflix-lightGray group-hover:text-white font-medium text-sm block transition-colors duration-300">
               {assunto}
             </span>
             {sequenceNumber && totalCount && (
