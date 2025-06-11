@@ -42,7 +42,7 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
     const searchLower = searchTerm.toLowerCase();
 
     // Filter resumos by selected area first
-    const filteredResumos = selectedArea 
+    const filteredResumos = selectedArea && selectedArea !== 'all'
       ? resumos.filter(resumo => resumo.area === selectedArea)
       : resumos;
 
@@ -135,13 +135,17 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
     onSearchChange('');
   };
 
+  const handleAreaChange = (value: string) => {
+    setSelectedArea(value === 'all' ? '' : value);
+  };
+
   return (
     <div className="relative mb-8 animate-fade-in">
       <div className="max-w-4xl mx-auto">
         {/* Filter Section */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <div className="flex-1">
-            <Select value={selectedArea} onValueChange={setSelectedArea}>
+            <Select value={selectedArea || 'all'} onValueChange={handleAreaChange}>
               <SelectTrigger className="w-full bg-netflix-darkGray border-netflix-gray text-netflix-lightGray">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
@@ -149,7 +153,7 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
                 </div>
               </SelectTrigger>
               <SelectContent className="bg-netflix-darkGray border-netflix-gray">
-                <SelectItem value="" className="text-netflix-lightGray hover:bg-netflix-gray">
+                <SelectItem value="all" className="text-netflix-lightGray hover:bg-netflix-gray">
                   Todas as áreas
                 </SelectItem>
                 {areas.map(({ area }) => (
@@ -181,12 +185,12 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder={selectedArea ? `Buscar em ${selectedArea}...` : "Selecione uma área primeiro para buscar..."}
+            placeholder={selectedArea && selectedArea !== '' ? `Buscar em ${selectedArea}...` : "Selecione uma área primeiro para buscar..."}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-            disabled={!selectedArea}
+            disabled={!selectedArea || selectedArea === ''}
             className="w-full pl-12 pr-12 py-4 bg-netflix-darkGray border border-netflix-gray rounded-xl text-netflix-lightGray placeholder-gray-400 focus:outline-none focus:border-netflix-red focus:ring-1 focus:ring-netflix-red transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {searchTerm && (
@@ -200,7 +204,7 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
         </div>
 
         {/* Selected Area Indicator */}
-        {selectedArea && (
+        {selectedArea && selectedArea !== '' && (
           <div className="mt-3 flex items-center gap-2 text-sm">
             <span className="text-gray-400">Buscando em:</span>
             <span className="px-3 py-1 bg-netflix-red/20 text-netflix-red rounded-full font-medium">
