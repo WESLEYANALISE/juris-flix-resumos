@@ -1,9 +1,9 @@
-
 import React, { useState, useMemo } from 'react';
 import { Search, X, Filter } from 'lucide-react';
 import { useUltraFastResumos } from '../hooks/useUltraFastResumos';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import MiniMarkdownRenderer from './MiniMarkdownRenderer';
+import { searchMatch } from '../utils/stringUtils';
 
 interface SearchResult {
   type: 'area' | 'modulo' | 'tema' | 'assunto';
@@ -39,19 +39,18 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
     if (!searchTerm || searchTerm.length < 2) return [];
 
     const results: SearchResult[] = [];
-    const searchLower = searchTerm.toLowerCase();
 
     // Filter resumos by selected area first
     const filteredResumos = selectedArea && selectedArea !== 'all'
       ? resumos.filter(resumo => resumo.area === selectedArea)
       : resumos;
 
-    // Search through filtered resumos
+    // Search through filtered resumos using accent-insensitive search
     filteredResumos.forEach(resumo => {
-      const moduloMatch = resumo.nome_do_modulo?.toLowerCase().includes(searchLower);
-      const temaMatch = resumo.nome_do_tema?.toLowerCase().includes(searchLower);
-      const assuntoMatch = resumo.titulo_do_assunto?.toLowerCase().includes(searchLower);
-      const contentMatch = resumo.texto?.toLowerCase().includes(searchLower);
+      const moduloMatch = resumo.nome_do_modulo && searchMatch(resumo.nome_do_modulo, searchTerm);
+      const temaMatch = resumo.nome_do_tema && searchMatch(resumo.nome_do_tema, searchTerm);
+      const assuntoMatch = resumo.titulo_do_assunto && searchMatch(resumo.titulo_do_assunto, searchTerm);
+      const contentMatch = resumo.texto && searchMatch(resumo.texto, searchTerm);
 
       if (assuntoMatch || contentMatch) {
         results.push({
@@ -185,7 +184,7 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder={selectedArea && selectedArea !== '' ? `Buscar em ${selectedArea}...` : "Selecione uma área primeiro para buscar..."}
+            placeholder={selectedArea && selectedArea !== '' ? `Buscar em ${selectedArea} (sem acentos)...` : "Selecione uma área primeiro para buscar..."}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
