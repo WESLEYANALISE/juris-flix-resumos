@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
-import { useResumos } from '../hooks/useResumos';
+import { Search, X, Filter } from 'lucide-react';
+import { useUltraFastResumos } from '../hooks/useUltraFastResumos';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import MiniMarkdownRenderer from './MiniMarkdownRenderer';
 
 interface SearchResult {
@@ -29,7 +30,10 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
   onResultClick
 }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const { resumos } = useResumos();
+  const [selectedArea, setSelectedArea] = useState<string>('');
+  const { resumos, getAreas } = useUltraFastResumos();
+
+  const areas = getAreas();
 
   const searchResults = useMemo(() => {
     if (!searchTerm || searchTerm.length < 2) return [];
@@ -37,9 +41,13 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
     const results: SearchResult[] = [];
     const searchLower = searchTerm.toLowerCase();
 
-    // Search through resumos
-    resumos.forEach(resumo => {
-      const areaMatch = resumo.area?.toLowerCase().includes(searchLower);
+    // Filter resumos by selected area first
+    const filteredResumos = selectedArea 
+      ? resumos.filter(resumo => resumo.area === selectedArea)
+      : resumos;
+
+    // Search through filtered resumos
+    filteredResumos.forEach(resumo => {
       const moduloMatch = resumo.nome_do_modulo?.toLowerCase().includes(searchLower);
       const temaMatch = resumo.nome_do_tema?.toLowerCase().includes(searchLower);
       const assuntoMatch = resumo.titulo_do_assunto?.toLowerCase().includes(searchLower);
@@ -96,23 +104,11 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
             }
           });
         }
-      } else if (areaMatch) {
-        const existing = results.find(r => r.type === 'area' && r.title === resumo.area);
-        
-        if (!existing) {
-          results.push({
-            type: 'area',
-            title: resumo.area,
-            path: {
-              area: resumo.area
-            }
-          });
-        }
       }
     });
 
     return results.slice(0, 8); // Limit results
-  }, [searchTerm, resumos]);
+  }, [searchTerm, resumos, selectedArea]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -134,19 +130,64 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
     }
   };
 
+  const handleClearFilters = () => {
+    setSelectedArea('');
+    onSearchChange('');
+  };
+
   return (
     <div className="relative mb-8 animate-fade-in">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
+        {/* Filter Section */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="flex-1">
+            <Select value={selectedArea} onValueChange={setSelectedArea}>
+              <SelectTrigger className="w-full bg-netflix-darkGray border-netflix-gray text-netflix-lightGray">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <SelectValue placeholder="Selecione uma área do direito..." />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-netflix-darkGray border-netflix-gray">
+                <SelectItem value="" className="text-netflix-lightGray hover:bg-netflix-gray">
+                  Todas as áreas
+                </SelectItem>
+                {areas.map(({ area }) => (
+                  <SelectItem 
+                    key={area} 
+                    value={area}
+                    className="text-netflix-lightGray hover:bg-netflix-gray"
+                  >
+                    {area}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {(selectedArea || searchTerm) && (
+            <button
+              onClick={handleClearFilters}
+              className="px-4 py-2 bg-netflix-gray text-netflix-lightGray rounded-md hover:bg-netflix-gray/80 transition-colors flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Search Section */}
         <div className={`relative transition-all duration-300 ${isSearchFocused ? 'transform scale-105' : ''}`}>
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar resumos, temas, áreas..."
+            placeholder={selectedArea ? `Buscar em ${selectedArea}...` : "Selecione uma área primeiro para buscar..."}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-            className="w-full pl-12 pr-12 py-4 bg-netflix-darkGray border border-netflix-gray rounded-xl text-netflix-lightGray placeholder-gray-400 focus:outline-none focus:border-netflix-red focus:ring-1 focus:ring-netflix-red transition-all duration-300"
+            disabled={!selectedArea}
+            className="w-full pl-12 pr-12 py-4 bg-netflix-darkGray border border-netflix-gray rounded-xl text-netflix-lightGray placeholder-gray-400 focus:outline-none focus:border-netflix-red focus:ring-1 focus:ring-netflix-red transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {searchTerm && (
             <button
@@ -158,8 +199,18 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
           )}
         </div>
 
+        {/* Selected Area Indicator */}
+        {selectedArea && (
+          <div className="mt-3 flex items-center gap-2 text-sm">
+            <span className="text-gray-400">Buscando em:</span>
+            <span className="px-3 py-1 bg-netflix-red/20 text-netflix-red rounded-full font-medium">
+              {selectedArea}
+            </span>
+          </div>
+        )}
+
         {/* Search Results */}
-        {isSearchFocused && searchResults.length > 0 && (
+        {isSearchFocused && searchResults.length > 0 && selectedArea && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-netflix-darkGray border border-netflix-gray rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto animate-slide-in-top">
             {searchResults.map((result, index) => (
               <div
@@ -202,11 +253,20 @@ const SearchWithPreview: React.FC<SearchWithPreviewProps> = ({
           </div>
         )}
 
+        {/* No Area Selected Message */}
+        {isSearchFocused && !selectedArea && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-netflix-darkGray border border-netflix-gray rounded-xl shadow-2xl z-50 p-6 text-center animate-fade-in">
+            <Filter className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">Selecione uma área do direito primeiro</p>
+            <p className="text-sm text-gray-500 mt-2">Isso ajuda a encontrar resultados mais precisos</p>
+          </div>
+        )}
+
         {/* No Results */}
-        {isSearchFocused && searchTerm.length >= 2 && searchResults.length === 0 && (
+        {isSearchFocused && selectedArea && searchTerm.length >= 2 && searchResults.length === 0 && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-netflix-darkGray border border-netflix-gray rounded-xl shadow-2xl z-50 p-6 text-center animate-fade-in">
             <Search className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">Nenhum resultado encontrado para "{searchTerm}"</p>
+            <p className="text-gray-400">Nenhum resultado encontrado em "{selectedArea}"</p>
             <p className="text-sm text-gray-500 mt-2">Tente usar palavras-chave diferentes</p>
           </div>
         )}
